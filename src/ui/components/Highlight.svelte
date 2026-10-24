@@ -20,7 +20,7 @@
 
 <style>
   .found {
-    background: var(--yellow);
-    color: var(--bg);
+    background: var(--find-bg);
+    color: var(--find-fg);
   }
 </style>

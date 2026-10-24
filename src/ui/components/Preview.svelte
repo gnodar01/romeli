@@ -55,35 +55,35 @@
     height: 100%;
   }
   .title {
-    color: var(--fg);
+    color: var(--title);
     font-weight: bold;
     word-break: break-word;
   }
   .url {
-    color: var(--cyan);
+    color: var(--url);
     word-break: break-all;
     margin-top: 2px;
   }
   .section {
     margin-top: 12px;
-    color: var(--pink);
+    color: var(--accent);
   }
   .tagrow {
-    color: var(--purple);
+    color: var(--tag);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
   }
   .tagrow.here {
-    background: var(--cur);
+    background: var(--line-bg);
   }
   .key {
     display: inline-block;
     width: 7ch;
-    color: var(--comment);
+    color: var(--dim);
   }
   .star {
-    color: var(--yellow);
+    color: var(--star);
     display: inline-block;
     width: 2ch;
   }

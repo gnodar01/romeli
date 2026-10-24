@@ -135,10 +135,10 @@
     align-items: center;
     gap: 8px;
     padding: 3px 0;
-    border-bottom: 1px solid var(--cur);
+    border-bottom: 1px solid var(--divider);
   }
   .field:focus-within .label {
-    color: var(--pink);
+    color: var(--accent);
   }
   .field > :global(.tag-input),
   .field > input {
@@ -148,10 +148,10 @@
   .label {
     width: 4ch;
     flex: none;
-    color: var(--comment);
+    color: var(--dim);
   }
   .url {
-    color: var(--cyan);
+    color: var(--url);
   }
   .chips {
     display: flex;
@@ -161,23 +161,23 @@
     min-height: var(--row);
   }
   .chip {
-    color: var(--purple);
+    color: var(--tag);
   }
   .chip.primary {
-    color: var(--pink);
+    color: var(--tag-primary);
   }
   .chip.new {
-    color: var(--orange);
+    color: var(--tag-new);
   }
   .error {
-    color: var(--red);
+    color: var(--error);
   }
   .hints {
     display: flex;
     flex-wrap: wrap;
     gap: 0 14px;
     margin-top: 4px;
-    font-size: 12px;
+    font-size: var(--font-size-sm);
   }
   .hints b {
     color: var(--fg);

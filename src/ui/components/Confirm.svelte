@@ -39,10 +39,10 @@
     width: min(520px, calc(100vw - 24px));
     padding-top: 12px;
     outline: none;
-    border-color: var(--red);
+    border-color: var(--error);
   }
   .confirm .box-title {
-    color: var(--red);
+    color: var(--error);
   }
   .lines {
     max-height: 40vh;
@@ -57,20 +57,20 @@
   }
   .sub {
     padding-left: 2ch;
-    color: var(--comment);
+    color: var(--dim);
   }
   .sub.warn {
-    color: var(--orange);
+    color: var(--warn);
   }
   .answer {
     margin-top: 8px;
-    color: var(--comment);
+    color: var(--dim);
     text-align: right;
   }
   .y {
-    color: var(--green);
+    color: var(--ok);
   }
   .n {
-    color: var(--red);
+    color: var(--error);
   }
 </style>

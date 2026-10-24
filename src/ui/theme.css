@@ -1,22 +1,4 @@
-/* Dracula palette — https://draculatheme.com/contribute#color-palette */
-:root {
-  --bg: #282a36;
-  --bg-dark: #21222c;
-  --bg-darker: #191a21;
-  --cur: #44475a;
-  --fg: #f8f8f2;
-  --comment: #6272a4;
-  --cyan: #8be9fd;
-  --green: #50fa7b;
-  --orange: #ffb86c;
-  --pink: #ff79c6;
-  --purple: #bd93f9;
-  --red: #ff5555;
-  --yellow: #f1fa8c;
-  --mono: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', 'SF Mono', Menlo, Consolas, 'DejaVu Sans Mono', monospace;
-  --row: 20px;
-  color-scheme: dark;
-}
+/* Colors, font and row height are CSS variables generated from src/core/theme.ts (see initTheme). */
 
 * {
   box-sizing: border-box;
@@ -28,7 +10,7 @@ body {
   height: 100%;
   background: var(--bg);
   color: var(--fg);
-  font: 13px / var(--row) var(--mono);
+  font: var(--font-size) / var(--row) var(--mono);
   overflow: hidden;
 }
 
@@ -40,27 +22,27 @@ input {
   outline: none;
   padding: 0;
   width: 100%;
-  caret-color: var(--pink);
+  caret-color: var(--caret);
 }
 
 ::selection {
-  background: var(--purple);
-  color: var(--bg);
+  background: var(--text-sel-bg);
+  color: var(--text-sel-fg);
 }
 
 .dim {
-  color: var(--comment);
+  color: var(--dim);
 }
 
 .hl {
-  color: var(--pink);
+  color: var(--match);
   font-weight: bold;
 }
 
 /* A TUI-ish box: single-line border with a title sitting on the top edge. */
 .box {
   position: relative;
-  border: 1px solid var(--comment);
+  border: 1px solid var(--border);
   border-radius: 4px;
   padding: 6px 10px;
   background: var(--bg);
@@ -68,12 +50,12 @@ input {
 
 .box > .box-title {
   position: absolute;
-  top: -10px;
+  top: calc(var(--row) / -2);
   left: 10px;
   padding: 0 4px;
   background: inherit;
-  color: var(--pink);
-  line-height: 18px;
+  color: var(--accent);
+  line-height: calc(var(--row) - 2px);
 }
 
 .overlay-backdrop {
@@ -83,14 +65,14 @@ input {
   align-items: flex-start;
   justify-content: center;
   padding-top: 12vh;
-  background: rgba(25, 26, 33, 0.55);
+  background: color-mix(in srgb, var(--backdrop) 55%, transparent);
   z-index: 10;
 }
 
 .scroll {
   overflow-y: auto;
   scrollbar-width: thin;
-  scrollbar-color: var(--cur) transparent;
+  scrollbar-color: var(--scrollbar) transparent;
 }
 
 .favicon {

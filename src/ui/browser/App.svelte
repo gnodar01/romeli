@@ -954,17 +954,17 @@
     overflow: hidden;
   }
   .root {
-    color: var(--pink);
+    color: var(--path-root);
   }
   .sep {
-    color: var(--comment);
+    color: var(--path-sep);
   }
   .cwd {
-    color: var(--purple);
+    color: var(--path-cwd);
     font-weight: bold;
   }
   .leaf {
-    color: var(--fg);
+    color: var(--path-leaf);
   }
   .tabs {
     display: flex;
@@ -972,18 +972,18 @@
   }
   .tab {
     padding: 0 8px;
-    color: var(--comment);
+    color: var(--tab);
   }
   .tab.active {
-    background: var(--purple);
-    color: var(--bg);
+    background: var(--tab-active-bg);
+    color: var(--tab-active-fg);
   }
   main {
     display: grid;
     grid-template-columns: 1fr 4fr 3fr;
     min-height: 0;
-    border-top: 1px solid var(--cur);
-    border-bottom: 1px solid var(--cur);
+    border-top: 1px solid var(--divider);
+    border-bottom: 1px solid var(--divider);
   }
   .col {
     min-width: 0;
@@ -991,7 +991,7 @@
     padding: 2px 0;
   }
   .col + .col {
-    border-left: 1px solid var(--cur);
+    border-left: 1px solid var(--divider);
   }
   .parent {
     opacity: 0.85;
@@ -1005,20 +1005,20 @@
     padding-right: 8px;
   }
   .mode {
-    background: var(--pink);
-    color: var(--bg);
+    background: var(--mode-normal);
+    color: var(--mode-fg);
     padding: 0 8px;
     font-weight: bold;
   }
   .mode.vis,
   .mode.uns {
-    background: var(--orange);
+    background: var(--mode-visual);
   }
   .mode.sel {
-    background: var(--yellow);
+    background: var(--mode-select);
   }
   .url {
-    color: var(--cyan);
+    color: var(--url);
     overflow: hidden;
     text-overflow: ellipsis;
   }
@@ -1027,41 +1027,41 @@
     text-overflow: ellipsis;
   }
   .msg.info {
-    color: var(--green);
+    color: var(--ok);
   }
   .msg.warn {
-    color: var(--orange);
+    color: var(--warn);
   }
   .msg.error {
-    color: var(--red);
+    color: var(--error);
   }
   .spacer {
     flex: 1;
   }
   .badge {
-    color: var(--comment);
+    color: var(--dim);
   }
   .badge.yank {
-    color: var(--green);
+    color: var(--badge-yank);
   }
   .badge.cut {
-    color: var(--red);
+    color: var(--badge-cut);
   }
   .badge.sel {
-    color: var(--yellow);
+    color: var(--badge-select);
   }
   .badge.find {
-    color: var(--yellow);
+    color: var(--badge-find);
   }
   .badge.filter,
   .badge.rec {
-    color: var(--cyan);
+    color: var(--badge-filter);
   }
   .badge.warn {
-    color: var(--orange);
+    color: var(--warn);
   }
   .pos {
-    color: var(--pink);
+    color: var(--position);
   }
   .whichkey {
     position: fixed;
@@ -1072,11 +1072,11 @@
     grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
     gap: 0 16px;
     padding: 6px 12px;
-    background: var(--bg-dark);
-    border-top: 1px solid var(--purple);
+    background: var(--popup-bg);
+    border-top: 1px solid var(--whichkey-border);
   }
   .whichkey .k {
-    color: var(--pink);
+    color: var(--whichkey-key);
     display: inline-block;
     min-width: 5ch;
   }

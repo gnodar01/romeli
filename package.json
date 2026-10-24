@@ -12,7 +12,7 @@
     "lint:ext": "web-ext lint --source-dir dist",
     "package": "npm run build && web-ext build --source-dir dist --artifacts-dir artifacts --overwrite-dest",
     "harness": "vite --config harness/vite.config.ts",
-    "e2e": "node harness/drive.mjs /tmp && node harness/drive-create.mjs /tmp && node harness/drive-features.mjs /tmp"
+    "e2e": "node harness/drive.mjs /tmp && node harness/drive-create.mjs /tmp && node harness/drive-features.mjs /tmp && node harness/drive-theme.mjs /tmp"
   },
   "devDependencies": {
     "@sveltejs/vite-plugin-svelte": "^7.3.1",

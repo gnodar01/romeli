@@ -124,24 +124,24 @@
     right: -10px;
     top: calc(var(--row) + 6px);
     max-height: calc(var(--row) * 8 + 2px);
-    border: 1px solid var(--comment);
-    background: var(--bg-dark);
+    border: 1px solid var(--border);
+    background: var(--popup-bg);
     z-index: 5;
   }
   .row {
     padding: 0 10px;
-    color: var(--purple);
+    color: var(--tag);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
   }
   .row.new {
-    color: var(--orange);
+    color: var(--tag-new);
   }
   .row.sel {
-    background: var(--cur);
+    background: var(--line-bg);
   }
   .badge {
-    color: var(--comment);
+    color: var(--dim);
   }
 </style>

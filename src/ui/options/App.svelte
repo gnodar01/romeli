@@ -4,6 +4,7 @@
   import { ACTIONS, DEFAULT_BINDINGS, eventToKey, type Action } from '../../core/keymap';
   import { normalizeName, plural } from '../../core/store';
   import { formatPath } from '../../core/tags';
+  import ThemeEditor from './ThemeEditor.svelte';
 
   const isMac = navigator.platform.toLowerCase().includes('mac');
   const store = createStore();
@@ -252,6 +253,8 @@
     </label>
   </section>
 
+  <ThemeEditor {flash} />
+
   {#if status}
     <button class="status" class:error={status.error} onclick={() => (status = null)}>
       {status.text}{#if status.error}<span class="dim"> · Esc to dismiss</span>{/if}
@@ -271,120 +274,122 @@
     flex-direction: column;
     gap: 22px;
   }
-  h1 {
-    font-size: 16px;
-    margin: 0;
-  }
-  .pink {
-    color: var(--pink);
-  }
-  section {
-    padding-top: 14px;
-  }
-  p {
-    margin: 0 0 8px;
-  }
-  code {
-    color: var(--yellow);
-  }
-  .row {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) 240px 110px;
-    gap: 10px;
-    align-items: center;
-    padding: 1px 0 1px 6px;
-    border-left: 2px solid transparent;
-    border-bottom: 1px solid var(--bg-dark);
-  }
-  .row:focus-within {
-    background: var(--bg-darker);
-    border-left-color: var(--pink);
-  }
-  .row:focus-within .desc {
-    color: var(--pink);
-  }
-  .row.custom .desc {
-    color: var(--cyan);
-  }
-  .key {
-    color: var(--pink);
-    border-bottom: 1px solid var(--cur);
-    padding: 0 4px;
-  }
-  .key:focus {
-    background: var(--cur);
-    color: var(--yellow);
-    border-bottom-color: var(--yellow);
-  }
-  .toolbar {
-    display: flex;
-    gap: 10px;
-    margin: 6px 0;
-  }
-  .filter {
-    border-bottom: 1px solid var(--comment);
-  }
-  .filter:focus {
-    border-bottom-color: var(--pink);
-  }
-  button {
-    white-space: nowrap;
-    font: inherit;
-    color: var(--fg);
-    background: var(--cur);
-    border: 1px solid var(--comment);
-    padding: 0 8px;
-    cursor: pointer;
-  }
-  button:focus {
-    outline: none;
-    border-color: var(--pink);
-    color: var(--pink);
-  }
-  button.rec {
-    background: var(--red);
-    color: var(--bg);
-  }
-  .conflict {
-    grid-column: 1 / -1;
-    color: var(--orange);
-    font-size: 12px;
-  }
-  .error-line {
-    grid-column: 1 / -1;
-    color: var(--red);
-    font-size: 12px;
-  }
-  .bad {
-    max-height: 200px;
-    color: var(--purple);
-  }
-  .ok {
-    color: var(--green);
-  }
-  .check {
-    display: flex;
-    gap: 8px;
-    align-items: center;
-  }
-  .check input {
-    width: auto;
-    accent-color: var(--pink);
-  }
-  .status {
-    position: fixed;
-    bottom: 12px;
-    right: 14px;
-    max-width: calc(100vw - 28px);
-    white-space: normal;
-    text-align: left;
-    color: var(--green);
-    background: var(--bg-dark);
-    border: 1px solid var(--green);
-    padding: 4px 10px;
-  }
-  .status.error {
-    color: var(--red);
-    border-color: var(--red);
+  main :global {
+    h1 {
+      font-size: 16px;
+      margin: 0;
+    }
+    .pink {
+      color: var(--accent);
+    }
+    section {
+      padding-top: 14px;
+    }
+    p {
+      margin: 0 0 8px;
+    }
+    code {
+      color: var(--key);
+    }
+    .row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 240px 110px;
+      gap: 10px;
+      align-items: center;
+      padding: 1px 0 1px 6px;
+      border-left: 2px solid transparent;
+      border-bottom: 1px solid var(--row-line);
+    }
+    .row:focus-within {
+      background: var(--focus-bg);
+      border-left-color: var(--accent);
+    }
+    .row:focus-within .desc {
+      color: var(--accent);
+    }
+    .row.custom .desc {
+      color: var(--modified);
+    }
+    .key {
+      color: var(--accent);
+      border-bottom: 1px solid var(--divider);
+      padding: 0 4px;
+    }
+    .key:focus {
+      background: var(--line-bg);
+      color: var(--key);
+      border-bottom-color: var(--key);
+    }
+    .toolbar {
+      display: flex;
+      gap: 10px;
+      margin: 6px 0;
+    }
+    .filter {
+      border-bottom: 1px solid var(--border);
+    }
+    .filter:focus {
+      border-bottom-color: var(--accent);
+    }
+    button {
+      white-space: nowrap;
+      font: inherit;
+      color: var(--fg);
+      background: var(--button-bg);
+      border: 1px solid var(--border);
+      padding: 0 8px;
+      cursor: pointer;
+    }
+    button:focus {
+      outline: none;
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+    button.rec {
+      background: var(--error);
+      color: var(--bg);
+    }
+    .conflict {
+      grid-column: 1 / -1;
+      color: var(--warn);
+      font-size: var(--font-size-sm);
+    }
+    .error-line {
+      grid-column: 1 / -1;
+      color: var(--error);
+      font-size: var(--font-size-sm);
+    }
+    .bad {
+      max-height: 200px;
+      color: var(--tag);
+    }
+    .ok {
+      color: var(--ok);
+    }
+    .check {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+    .check input {
+      width: auto;
+      accent-color: var(--accent);
+    }
+    .status {
+      position: fixed;
+      bottom: 12px;
+      right: 14px;
+      max-width: calc(100vw - 28px);
+      white-space: normal;
+      text-align: left;
+      color: var(--ok);
+      background: var(--popup-bg);
+      border: 1px solid var(--ok);
+      padding: 4px 10px;
+    }
+    .status.error {
+      color: var(--error);
+      border-color: var(--error);
+    }
   }
 </style>

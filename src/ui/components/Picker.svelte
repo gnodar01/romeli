@@ -85,17 +85,17 @@
   .query {
     display: flex;
     gap: 8px;
-    border-bottom: 1px solid var(--cur);
+    border-bottom: 1px solid var(--divider);
     padding-bottom: 4px;
     margin-bottom: 4px;
   }
   .prompt {
-    color: var(--pink);
+    color: var(--accent);
   }
   .hint {
     margin-top: 4px;
-    font-size: 12px;
-    border-top: 1px solid var(--cur);
+    font-size: var(--font-size-sm);
+    border-top: 1px solid var(--divider);
     padding-top: 2px;
   }
   .rows {
@@ -108,10 +108,10 @@
     white-space: nowrap;
   }
   .row.tag .label {
-    color: var(--purple);
+    color: var(--tag);
   }
   .row.sel {
-    background: var(--cur);
+    background: var(--line-bg);
   }
   .label {
     flex: 1;
@@ -124,7 +124,7 @@
     min-width: 0;
     overflow: hidden;
     text-overflow: ellipsis;
-    color: var(--comment);
+    color: var(--dim);
     text-align: right;
   }
 </style>

@@ -78,30 +78,32 @@
     flex: none;
   }
   .row.sel .mark {
-    background: var(--yellow);
+    background: var(--selected);
   }
   .row.yank .mark {
-    background: var(--green);
+    background: var(--mark-yank);
   }
   .row.cut .mark {
-    background: var(--red);
+    background: var(--mark-cut);
   }
-  .row.sel.yank .mark,
+  .row.sel.yank .mark {
+    background: linear-gradient(var(--selected) 50%, var(--mark-yank) 50%);
+  }
   .row.sel.cut .mark {
-    background: linear-gradient(var(--yellow) 50%, var(--green) 50%);
+    background: linear-gradient(var(--selected) 50%, var(--mark-cut) 50%);
   }
   .row.cut .name {
     text-decoration: line-through;
-    text-decoration-color: var(--red);
+    text-decoration-color: var(--mark-cut);
   }
   .icon {
     width: 16px;
     flex: none;
     text-align: center;
-    color: var(--comment);
+    color: var(--dim);
   }
   .tag .icon {
-    color: var(--purple);
+    color: var(--tag);
   }
   .name {
     flex: 1;
@@ -110,38 +112,38 @@
     text-overflow: ellipsis;
   }
   .tag .name {
-    color: var(--purple);
+    color: var(--tag);
   }
   .row.sel .name {
-    color: var(--yellow);
+    color: var(--selected);
   }
   .rel {
-    color: var(--comment);
+    color: var(--dim);
   }
   .info {
     flex: none;
-    color: var(--comment);
-    font-size: 12px;
+    color: var(--dim);
+    font-size: var(--font-size-sm);
   }
   .row.cursor {
-    background: var(--cur);
+    background: var(--line-bg);
   }
   .active .row.cursor {
-    background: var(--purple);
-    color: var(--bg);
+    background: var(--cursor-tag-bg);
+    color: var(--cursor-fg);
   }
   .active .row.cursor .name,
   .active .row.cursor .icon,
   .active .row.cursor .info,
   .active .row.cursor .rel {
-    color: var(--bg);
+    color: var(--cursor-fg);
   }
   .active .row.cursor :global(.hl) {
-    color: var(--bg);
+    color: var(--cursor-fg);
     text-decoration: underline;
   }
   .active .row.item.cursor {
-    background: var(--cyan);
+    background: var(--cursor-item-bg);
   }
   .empty {
     padding: 0 12px;

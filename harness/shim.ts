@@ -50,9 +50,9 @@ const kv = (area: string) => {
       await m.set(items);
       storageChanged.fire(items, area);
     },
-    remove: async (keys: string[]) => {
-      await m.remove(keys);
-      storageChanged.fire({}, area);
+    remove: async (keys: string | string[]) => {
+      await m.remove([keys].flat());
+      storageChanged.fire(Object.fromEntries([keys].flat().map((k) => [k, {}])), area);
     },
   };
 };

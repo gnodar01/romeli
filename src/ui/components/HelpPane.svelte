@@ -102,8 +102,8 @@
     margin-bottom: 10px;
   }
   .group {
-    color: var(--pink);
-    border-bottom: 1px solid var(--cur);
+    color: var(--accent);
+    border-bottom: 1px solid var(--divider);
     margin-bottom: 2px;
   }
   .row {
@@ -118,7 +118,7 @@
     text-overflow: ellipsis;
   }
   .k {
-    color: var(--yellow);
+    color: var(--key);
   }
   .k + .k {
     margin-left: 1.5ch;
@@ -128,7 +128,7 @@
   }
   .foot {
     margin-top: 6px;
-    font-size: 12px;
+    font-size: var(--font-size-sm);
     text-align: right;
   }
 </style>

@@ -55,7 +55,7 @@
     padding-top: 10px;
   }
   .hint {
-    font-size: 12px;
+    font-size: var(--font-size-sm);
     margin-top: 4px;
   }
 </style>

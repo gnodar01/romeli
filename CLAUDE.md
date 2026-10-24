@@ -34,7 +34,8 @@ scratchpad. Extend the drive scripts when you add behavior. Stop the harness aft
   - `complete.ts`: completion for the tag-list input. `fuzzy.ts`: an fzf-like matcher.
   - `keymap.ts`: actions, `ACTION_GROUPS` (help-pane sections), default bindings, and the multi-key `KeyResolver`.
   - `undo.ts`: the undo/redo stack.
-- `src/adapter/browser.ts`: wrappers for the WebExtension APIs, plus settings (`storage.sync` key `settings`), favicons (`storage.local`), change events, and opening URLs.
+  - `theme.ts`: palette (`PALETTE`), semantic roles (`ROLE_GROUPS`, each defaulting to a palette slot), presets, `sanitizeTheme`, and `themeCss`, which generates every color/font/row CSS variable (`--p-<slot>` for the palette, `--<role>` for roles).
+- `src/adapter/browser.ts`: wrappers for the WebExtension APIs, plus settings (`storage.sync` key `settings`), the theme (`storage.sync` key `theme`, diffs only; `initTheme` paints from a `localStorage` CSS cache first, then follows storage changes), favicons (`storage.local`), change events, and opening URLs.
 - `src/background/index.ts`:
   - handles the commands (`open-browser`, `create-bookmark`) and opens the browser and create windows as single-instance popups (ids kept in `storage.session`);
   - captures favicons from tabs.
@@ -42,8 +43,8 @@ scratchpad. Extend the drive scripts when you add behavior. Stop the harness aft
   - `browser/App.svelte`: the main app. It holds state, the action dispatcher `exec()`, and the overlays.
   - `browser/view.ts`: entry lists, sorting, stable entry keys, and shared UI types.
   - `create/`: the create/edit popup.
-  - `options/`: settings (keymap, global shortcuts, folder-name normalization).
-  - `components/`: shared components. `theme.css` holds the Dracula tokens.
+  - `options/`: settings (keymap, global shortcuts, folder-name normalization, `ThemeEditor.svelte`).
+  - `components/`: shared components. `theme.css` holds base styles only; colors come from the generated theme.
 - `harness/`: dev-only. `shim.ts` fakes `browser` using `tests/mock.ts` and seeds a tree, including deliberately "bad" folder names.
 
 ## Data model invariants (don't break these)
@@ -69,7 +70,7 @@ scratchpad. Extend the drive scripts when you add behavior. Stop the harness aft
 - **Keyboard first:** everything must be drivable from the keyboard. Follow yazi's bindings unless there's a reason not to, and keep every key remappable through `ACTIONS`/`DEFAULT_BINDINGS`. A new action needs an entry in `ACTION_GROUPS`; a test enforces this, and also that no key is bound twice.
 - **Look:**
   - TUI feel: monospace, box-drawing style borders, a status bar with a mode pill and `[n/m]` counts.
-  - Dracula colors only, via the CSS variables in `theme.css`.
+  - Dracula by default, but every color is themeable: styles use **role** variables only (`var(--tag)`, `var(--cursor-fg)`…), never palette slots (`--p-*`) or raw colors. A new colored element gets a role in `ROLE_GROUPS` (defaulting to a palette slot) so it's customizable; tests enforce that every `var(--x)` used in `src/ui` exists. Use `var(--font-size-sm)` instead of fixed font sizes.
   - Selection colour is purple with dark text, so it must stay distinguishable from the current-line grey.
 - **Confirmations:** destructive actions (`d`, `D`, tag deletion, normalization) always ask y/N, and undo (`u`, `C-r`) must work for every store op.
 - **Bookmark form:** Enter cycles name → url → tags, and ⌘↵ / Ctrl+↵ saves. In the tags field, Tab accepts a completion.

@@ -2,7 +2,7 @@
 
 A keyboard-driven Firefox extension that manages your **native Firefox bookmarks** as
 [geekmarks-style hierarchical tags](https://dmitryfrank.com/projects/geekmarks/article), with a
-[yazi](https://yazi-rs.github.io/)-like Miller-column interface in the [Dracula](https://draculatheme.com) palette.
+[yazi](https://yazi-rs.github.io/)-like Miller-column interface in the [Dracula](https://draculatheme.com) palette (fully themeable).
 No server: Firefox's bookmark tree is the source of truth and Firefox Sync carries it everywhere.
 
 ## How tags map onto bookmarks
@@ -67,6 +67,15 @@ Firefox picks the macOS or Windows/Linux default automatically on install. Chang
 | `u` `C-r` | undo / redo |
 | `?` `~` `F1` | key reference pane (`j/k` scroll, `J/K` half page, `gg/G`, `Esc`) |
 | `Esc` `q` | cancel / close |
+
+### Theme
+
+Settings → *theme*. The palette (13 colors, Dracula by default) drives about 50 semantic roles (selection, tags,
+cursor lines, mode pills, marks, badges…). Point any role at another palette color (`purple`) or at a fixed CSS
+color (`#ff0000`, `rgb(…)`). Presets (Dracula, Alucard, Gruvbox, Nord) swap the palette but keep your role
+overrides; native controls (scrollbars, dropdowns) go light or dark to match the background. Font family, font size and row height are also there, and the whole theme can be
+copied out and pasted back in as JSON. The theme syncs (`storage.sync` key `theme`, differences only) and applies
+live to every open romeli window.
 
 ## Development
 
