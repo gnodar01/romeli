@@ -30,10 +30,12 @@ export interface Settings {
   sort: SortKey;
   reverse: boolean;
   tagsFirst: boolean;
+  /** Offer to normalize folder names containing ',' or '/' when the browser opens. */
+  askNormalize: boolean;
   bindings: Partial<Record<string, string[]>>;
 }
 
-export const DEFAULT_SETTINGS: Settings = { sort: 'alpha', reverse: false, tagsFirst: true, bindings: {} };
+export const DEFAULT_SETTINGS: Settings = { sort: 'alpha', reverse: false, tagsFirst: true, askNormalize: true, bindings: {} };
 
 export async function loadSettings(): Promise<Settings> {
   const { settings } = await browser.storage.sync.get('settings');

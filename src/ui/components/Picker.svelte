@@ -6,14 +6,17 @@
   let {
     title,
     placeholder = '',
+    hint = '',
     search,
     onPick,
     onCancel,
   }: {
     title: string;
     placeholder?: string;
+    hint?: string;
     search: (q: string) => PickerRow<T>[];
-    onPick: (v: T) => void;
+    /** `alt` is true for Shift+Enter. */
+    onPick: (v: T, alt: boolean) => void;
     onCancel: () => void;
   } = $props();
 
@@ -35,7 +38,7 @@
     const ctrl = e.ctrlKey && !e.altKey;
     if (e.key === 'Enter') {
       e.preventDefault();
-      if (rows[sel]) onPick(rows[sel].value);
+      if (rows[sel]) onPick(rows[sel].value, e.shiftKey);
     } else if (e.key === 'Escape') {
       e.preventDefault();
       onCancel();
@@ -70,6 +73,7 @@
         <div class="dim">no matches</div>
       {/each}
     </div>
+    {#if hint}<div class="hint dim">{hint}</div>{/if}
   </div>
 </div>
 
@@ -87,6 +91,12 @@
   }
   .prompt {
     color: var(--pink);
+  }
+  .hint {
+    margin-top: 4px;
+    font-size: 12px;
+    border-top: 1px solid var(--cur);
+    padding-top: 2px;
   }
   .rows {
     max-height: 55vh;

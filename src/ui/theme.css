@@ -44,7 +44,8 @@ input {
 }
 
 ::selection {
-  background: var(--cur);
+  background: var(--purple);
+  color: var(--bg);
 }
 
 .dim {

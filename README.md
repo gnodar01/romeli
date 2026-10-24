@@ -28,13 +28,15 @@ No server: Firefox's bookmark tree is the source of truth and Firefox Sync carri
 
 | Shortcut | |
 |---|---|
-| `Alt+Shift+M` | Open the browser (also the toolbar button) |
-| `Alt+Shift+B` | Bookmark the current page (opens edit mode if already bookmarked) |
+| `Ctrl+Shift+M` (macOS) · `Alt+Shift+M` | Open the browser (also the toolbar button) |
+| `Ctrl+Shift+B` (macOS) · `Alt+Shift+B` | Bookmark the current page (opens edit mode if already bookmarked) |
 
-Change them in romeli's settings page or `about:addons → ⚙ → Manage Extension Shortcuts`.
+Firefox picks the macOS or Windows/Linux default automatically on install. Change them in romeli's settings page
+(press *record*, then the combination) or `about:addons → ⚙ → Manage Extension Shortcuts`.
 
-**Tag input** (create/edit): `Tab` accepts a completion, `↑/↓` or `C-n/C-p` cycle, `,` starts the next tag,
-`C-w` deletes back one level, `Enter` saves, `Esc` cancels. Unknown tags are offered as `+ create … [new]`.
+**Bookmark form** (create/edit): `Enter` / `Shift+Enter` cycle name → url → tags, `⌘Enter` (macOS) or
+`Ctrl+Enter` saves, `Esc` cancels. In the tags field `Tab` accepts a completion, `↑/↓` or `C-n/C-p` cycle,
+`,` starts the next tag, `C-w` deletes back one level. Unknown tags are offered as `+ create … [new]`.
 
 ### Browser keys (all remappable in settings)
 
@@ -54,15 +56,16 @@ Change them in romeli's settings page or `about:addons → ⚙ → Manage Extens
 | `D` | delete the item everywhere — confirms |
 | `a` | create (`name/` creates a tag, a url or name opens the bookmark form) |
 | `r` `e` | rename / edit an item's url, name and tag list |
-| `/` `?` `n` `N` | find in column |
+| `/` `n` `N` | find in column: all occurrences highlighted, `[n/m]` in the status bar, `Esc` clears |
 | `f` | filter column (fuzzy) |
-| `z` `s` | fuzzy jump to any tag or item / search items by title or url |
+| `z` | fuzzy jump to any tag or item |
+| `s` / `S` | search bookmarks (title/url) / tags — `Shift+Enter` opens in a new browser tab / romeli tab |
 | `,a` `,c` `,m` `,n` (+ shift = reverse) `,t` | sort alpha / added / modified / Firefox order, tags-first toggle |
 | `R` | recursive view (include items from subtags) |
 | `t` `1`–`9` `[` `]` `C-c` | tabs |
 | `cc` `cn` `ct` | copy url / name / tag path |
 | `u` `C-r` | undo / redo |
-| `~` / `F1` | help (Enter runs the selected action) |
+| `?` `~` `F1` | key reference pane (`j/k` scroll, `J/K` half page, `gg/G`, `Esc`) |
 | `Esc` `q` | cancel / close |
 
 ## Development
@@ -82,10 +85,14 @@ Source layout: `src/core` holds all semantics (pure, tested against an in-memory
 
 **UI harness**: `npm run harness` serves the real UI at `http://localhost:5199/harness/{browser,create,options}.html`
 with a mocked `browser` API and a seeded tree; with it running, `npm run e2e` drives the UI in headless Firefox
-via puppeteer.
+via puppeteer (`harness/drive*.mjs`, screenshots go to `/tmp`).
 
 ## Notes
 
+* Folder names containing `,` or `/` are ambiguous in tag lists. On launch romeli offers to rename them
+  (`,` → `;`, `/` → `|`, undoable with `u`); answering no is remembered (synced), and the settings page has
+  a *normalize* button and the "ask on launch" toggle. Bookmark titles are never touched — only folder names
+  are parsed as tags.
 * Favicons are captured from your tabs (when you bookmark or visit a bookmarked page); nothing is fetched.
 * On Linux/Windows `Ctrl+W` is reserved by Firefox and closes the window; use `Ctrl+Backspace` in the tag field there.
 * A top-level folder literally named `toolbar`/`menu`/`mobile` in Other Bookmarks is shown as `toolbar~/` etc.

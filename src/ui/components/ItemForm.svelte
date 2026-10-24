@@ -69,11 +69,20 @@
     }
   }
 
+  const isMac = navigator.platform.toLowerCase().includes('mac');
+  const saveKey = isMac ? '⌘↵' : 'C-↵';
+
+  /** Enter cycles name → url → tags; Cmd/Ctrl+Enter saves. */
   function onkeydown(e: KeyboardEvent) {
     if (e.key === 'Enter' && !e.isComposing) {
       e.preventDefault();
       e.stopPropagation();
-      void submit();
+      if (isMac ? e.metaKey : e.ctrlKey) return void submit();
+      const order = [titleEl, urlEl, tagsEl];
+      const i = order.indexOf(document.activeElement as HTMLInputElement);
+      const next = order[(i + (e.shiftKey ? order.length - 1 : 1)) % order.length];
+      next?.focus();
+      next?.setSelectionRange(next.value.length, next.value.length);
     } else if (e.key === 'Escape') {
       e.preventDefault();
       e.stopPropagation();
@@ -110,7 +119,8 @@
   {#if error}<div class="error">{error}</div>{/if}
   <div class="hints dim">
     <span><b>Tab</b> complete</span><span><b>↑↓</b> cycle</span><span><b>,</b> next tag</span>
-    <span><b>C-w</b> back a level</span><span><b>Enter</b> {saving ? 'saving…' : 'save'}</span><span><b>Esc</b> cancel</span>
+    <span><b>C-w</b> back a level</span><span><b>↵</b> next field</span>
+    <span><b>{saveKey}</b> {saving ? 'saving…' : 'save'}</span><span><b>Esc</b> cancel</span>
   </div>
 </div>
 

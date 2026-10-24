@@ -27,6 +27,8 @@ api.seed({
     cloud: {},
   },
   music: { Bandcamp: 'https://bandcamp.com' },
+  'news, blogs': { 'LWN / Linux Weekly News': 'https://lwn.net' },
+  'a / b testing': {},
   'Hacker News': 'https://news.ycombinator.com',
 });
 // a second tag for yazi

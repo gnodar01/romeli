@@ -25,6 +25,8 @@ await type('cl');            console.log('cl →', (await comps()).slice(0, 2));
 await press('Tab');          console.log('tab →', await val());
 await page.screenshot({ path: `${out}/10-create.png` });
 await press('Enter');
+console.log('Enter cycles to:', await page.evaluate(() => document.activeElement?.closest('label')?.textContent?.trim().slice(0, 4)));
+await page.keyboard.down('Meta'); await press('Enter'); await page.keyboard.up('Meta');
 await sleep(600);
 console.log('locations:', await page.evaluate(() => window.__api.locations('https://github.com/sharkdp/fd')));
 console.log('calls:', JSON.stringify(await page.evaluate(() => window.__calls)));

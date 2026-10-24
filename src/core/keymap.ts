@@ -47,7 +47,8 @@ export const ACTIONS = {
   findPrevMatch: 'Previous match',
   filter: 'Filter column',
   jump: 'Jump anywhere (fuzzy)',
-  search: 'Search items by title/url',
+  search: 'Search items by title/url (S-Enter: new tab)',
+  searchTags: 'Search tags (S-Enter: new romeli tab)',
   // view
   sortAlpha: 'Sort alphabetically',
   sortAlphaRev: 'Sort alphabetically (reverse)',
@@ -80,12 +81,26 @@ export const ACTIONS = {
   // misc
   undo: 'Undo',
   redo: 'Redo',
-  help: 'Help',
+  help: 'Show all keys',
   escape: 'Cancel / clear',
   quit: 'Close romeli',
 } as const;
 
 export type Action = keyof typeof ACTIONS;
+
+/** Sections for the help pane, in display order. */
+export const ACTION_GROUPS: [string, Action[]][] = [
+  ['navigation', ['up', 'down', 'parent', 'enter', 'top', 'bottom', 'halfUp', 'halfDown', 'pageUp', 'pageDown', 'back', 'forward', 'goRoot', 'goToolbar', 'goMenu']],
+  ['open', ['open', 'openNew']],
+  ['selection', ['toggleSelect', 'visual', 'visualUnset', 'selectAll', 'invertSelection']],
+  ['yank & paste', ['yank', 'cut', 'paste', 'pasteInto', 'cancelYank']],
+  ['edit', ['delete', 'deleteAll', 'create', 'rename', 'editTags', 'undo', 'redo']],
+  ['search', ['find', 'findPrev', 'findNext', 'findPrevMatch', 'filter', 'jump', 'search', 'searchTags']],
+  ['view', ['sortAlpha', 'sortAlphaRev', 'sortCreated', 'sortCreatedRev', 'sortModified', 'sortModifiedRev', 'sortNative', 'sortNativeRev', 'toggleTagsFirst', 'toggleRecursive']],
+  ['tabs', ['tabNew', 'tabClose', 'tabPrev', 'tabNext', 'tab1', 'tab2', 'tab3', 'tab4', 'tab5', 'tab6', 'tab7', 'tab8', 'tab9']],
+  ['clipboard', ['copyUrl', 'copyTitle', 'copyPath']],
+  ['misc', ['help', 'escape', 'quit']],
+];
 export type Bindings = Record<Action, string[]>;
 
 export const DEFAULT_BINDINGS: Bindings = {
@@ -122,12 +137,13 @@ export const DEFAULT_BINDINGS: Bindings = {
   rename: ['r'],
   editTags: ['e'],
   find: ['/'],
-  findPrev: ['?'],
+  findPrev: [],
   findNext: ['n'],
   findPrevMatch: ['N'],
   filter: ['f'],
   jump: ['z'],
   search: ['s'],
+  searchTags: ['S'],
   sortAlpha: [',a'],
   sortAlphaRev: [',A'],
   sortCreated: [',c'],
@@ -156,7 +172,7 @@ export const DEFAULT_BINDINGS: Bindings = {
   copyPath: ['ct'],
   undo: ['u'],
   redo: ['<C-r>'],
-  help: ['~', '<F1>'],
+  help: ['?', '~', '<F1>'],
   escape: ['<Esc>'],
   quit: ['q'],
 };

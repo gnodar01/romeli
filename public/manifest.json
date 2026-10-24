@@ -7,24 +7,50 @@
     "gecko": {
       "id": "romeli@ngogober",
       "strict_min_version": "140.0",
-      "data_collection_permissions": { "required": ["none"] }
+      "data_collection_permissions": {
+        "required": [
+          "none"
+        ]
+      }
     }
   },
-  "permissions": ["bookmarks", "storage", "tabs", "clipboardWrite"],
-  "background": { "scripts": ["background.js"], "type": "module" },
+  "permissions": [
+    "bookmarks",
+    "storage",
+    "tabs",
+    "clipboardWrite"
+  ],
+  "background": {
+    "scripts": [
+      "background.js"
+    ],
+    "type": "module"
+  },
   "action": {
     "default_title": "romeli",
     "default_icon": "icons/romeli.svg"
   },
-  "icons": { "48": "icons/romeli.svg", "96": "icons/romeli.svg" },
-  "options_ui": { "page": "ui/options/index.html", "open_in_tab": true },
+  "icons": {
+    "48": "icons/romeli.svg",
+    "96": "icons/romeli.svg"
+  },
+  "options_ui": {
+    "page": "ui/options/index.html",
+    "open_in_tab": true
+  },
   "commands": {
     "open-browser": {
-      "suggested_key": { "default": "Alt+Shift+M" },
+      "suggested_key": {
+        "default": "Alt+Shift+M",
+        "mac": "MacCtrl+Shift+M"
+      },
       "description": "Open the romeli bookmark browser"
     },
     "create-bookmark": {
-      "suggested_key": { "default": "Alt+Shift+B" },
+      "suggested_key": {
+        "default": "Alt+Shift+B",
+        "mac": "MacCtrl+Shift+B"
+      },
       "description": "Bookmark the current page with romeli"
     }
   }

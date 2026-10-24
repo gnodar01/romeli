@@ -158,3 +158,23 @@ describe('override storage', () => {
     expect(decodeOverrides(enc)).toEqual(o);
   });
 });
+
+describe('normalizeNames', () => {
+  it('renames folders with separators, keeps orders, and undoes', async () => {
+    const { api, store } = await setup({ 'a, b': { 'c / d': { i: 'https://i' } }, plain: {} });
+    await store.saveItem('https://i', 'https://i', 'i', [P('plain'), ...store.model.item('https://i')!.tags]);
+    const before = api.dump();
+    expect(store.unnormalizedTags().map((t) => t.name)).toEqual(['a, b', 'c / d']);
+    const { entry } = await store.normalizeNames();
+    expect(store.unnormalizedTags()).toEqual([]);
+    expect(tagsOf(store, 'https://i')).toEqual(['plain', 'a; b/c | d']);
+    await entry!.undo();
+    expect(api.dump()).toEqual(before);
+    expect(store.model.item('https://i')!.tags.map((t) => t.length)).toEqual([1, 2]);
+  });
+
+  it('rejects separators in tag renames', async () => {
+    const { store } = await setup({ a: {} });
+    await expect(store.renameTag(P('a'), 'x, y')).rejects.toThrow(/","/);
+  });
+});

@@ -38,6 +38,7 @@ const log = (...a) => console.log(...a);
 
 await page.goto('http://localhost:5199/harness/browser.html');
 await sleep(1200);
+await keys('n'); // decline the folder-name normalization prompt
 await shot('01-root');
 log('header:', await text('header'));
 log('footer:', await text('footer'));
@@ -134,7 +135,7 @@ await keys('Tab');
 await type('term');
 await keys('Tab');
 log('tags field:', await page.$eval('.tag-input input', (i) => i.value));
-await keys('Enter');
+await keys('Meta+Enter');
 await sleep(500);
 log('rg tags (preview):', await text('.preview'));
 
@@ -158,10 +159,9 @@ await sleep(400);
 log('rows after create tag:', await page.$$eval('.current .row', (rs) => rs.map((r) => r.textContent.replace(/\s+/g, ' ').trim())));
 
 // help
-await keys('~');
-await type('undo');
+await keys('?');
 await shot('08-help');
-log('help:', await text('.picker'));
+log('help groups:', await page.$$eval('.help .group', (g) => g.map((x) => x.textContent)));
 await keys('Escape');
 
 // tabs

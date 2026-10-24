@@ -1,7 +1,7 @@
 <script lang="ts">
   import type { Favicons } from '../../adapter/browser';
   import { hostOf } from '../../adapter/browser';
-  import type { Entry } from '../browser/view';
+  import { findPositions, type Entry } from '../browser/view';
   import Highlight from './Highlight.svelte';
 
   let {
@@ -11,6 +11,7 @@
     favicons = {},
     mark = () => undefined,
     empty = 'empty',
+    find = '',
   }: {
     entries: Entry[];
     cursor?: number;
@@ -18,6 +19,8 @@
     favicons?: Favicons;
     mark?: (e: Entry, i: number) => 'sel' | 'yank' | 'cut' | 'sel yank' | 'sel cut' | undefined;
     empty?: string;
+    /** Active find query: occurrences are highlighted. */
+    find?: string;
   } = $props();
 
   let el = $state<HTMLElement>();
@@ -36,13 +39,17 @@
       <span class="mark"></span>
       {#if e.kind === 'tag'}
         <span class="icon">{e.tag.fixed ? '◆' : '▸'}</span>
-        <span class="name"><Highlight text={e.name} positions={e.positions} />/</span>
+        <span class="name"><Highlight text={e.name} positions={e.positions} found={findPositions(find, e.name)} />/</span>
         <span class="info">{e.tag.tags.length + e.tag.copies.length}</span>
       {:else}
         {@const icon = favicons[hostOf(e.copy.url)]}
         <span class="icon">{#if icon}<img class="favicon" src={icon} alt="" />{:else}·{/if}</span>
         <span class="name">
-          {#if e.rel}<span class="rel">{e.rel}</span>{/if}<Highlight text={e.name} positions={e.positions} />
+          {#if e.rel}<span class="rel">{e.rel}</span>{/if}<Highlight
+            text={e.name}
+            positions={e.positions}
+            found={findPositions(find, e.name)}
+          />
         </span>
         {#if e.item.copies.length > 1}<span class="info" title="tags">+{e.item.copies.length - 1}</span>{/if}
       {/if}

@@ -318,7 +318,7 @@ export class Store {
   async renameTag(path: TagPath, name: string): Promise<OpResult> {
     await this.reload();
     const tag = this.requireTag(path);
-    if (!name || name.includes('/')) throw new OpError('tag names cannot be empty or contain "/"');
+    if (!name || /[/,]/.test(name)) throw new OpError('tag names cannot be empty or contain "/" or ","');
     const parent = tag.parent!;
     if (parent.tags.some((t) => t !== tag && t.name === name)) throw new OpError(`${name}/ already exists here`);
     const oldName = tag.name;
@@ -446,6 +446,50 @@ export class Store {
     };
   }
 
+  /** Folders whose names contain the tag-list separators ',' or '/'. */
+  unnormalizedTags(): TagNode[] {
+    return this.model.allTags().filter((t) => !t.fixed && hasSeparator(t.name));
+  }
+
+  /** Rename every such folder (',' → ';', '/' → '|'), keeping stored tag orders in sync. */
+  async normalizeNames(): Promise<OpResult> {
+    await this.reload();
+    const bad = this.unnormalizedTags();
+    if (!bad.length) return { warnings: [] };
+    const renames = bad.map((t) => ({ id: t.id, from: t.name, to: normalizeName(t.name) }));
+    const savedOrders = new Map(this.overrides);
+    const keyMap = (fn: (r: (typeof renames)[number]) => [string, string]) => {
+      const byId = new Map(renames.map((r) => [r.id, fn(r)]));
+      const map = new Map<string, string>();
+      for (const t of this.model.allTags()) {
+        const path = [];
+        for (let cur: TagNode | null = t; cur && cur.parent; cur = cur.parent) path.unshift(byId.get(cur.id)?.[1] ?? cur.name);
+        map.set(t.key, pathKey(path));
+      }
+      return map;
+    };
+    const apply = async (forward: boolean) => {
+      await this.reload();
+      const map = keyMap((r) => (forward ? [r.from, r.to] : [r.to, r.from]));
+      for (const r of renames) await this.api.update(r.id, { title: forward ? r.to : r.from });
+      if (forward) {
+        for (const [url, keys] of this.overrides) this.overrides.set(url, keys.map((k) => map.get(k) ?? k));
+      } else {
+        this.overrides = new Map(savedOrders);
+      }
+      await this.saveOrders();
+    };
+    await apply(true);
+    return {
+      warnings: [],
+      entry: {
+        label: `normalize ${plural(renames.length, 'tag name')}`,
+        undo: () => apply(false),
+        redo: () => apply(true),
+      },
+    };
+  }
+
   /** Count what a tag deletion touches, for the confirmation prompt. */
   describeTagDeletion(path: TagPath): { tags: number; items: number; orphaned: number } {
     const tag = this.model.tag(path);
@@ -460,6 +504,9 @@ export class Store {
     return { tags: sub.length, items: urls.size, orphaned };
   }
 }
+
+export const hasSeparator = (name: string) => /[,/]/.test(name);
+export const normalizeName = (name: string) => name.replaceAll(',', ';').replaceAll('/', '|');
 
 export function plural(n: number, one: string, many = one + 's'): string {
   return `${n} ${n === 1 ? one : many}`;

@@ -81,10 +81,21 @@ export function keyOf(r: Ref): string {
   return r.kind === 'tag' ? tagKey(r.path) : itemKey(r.url, r.path);
 }
 
-/** Smart-case substring match used by find (/ and ?). */
+/** Smart-case substring match used by find (/). */
 export function findMatch(query: string, text: string): boolean {
   if (!query) return false;
   return query === query.toLowerCase() ? text.toLowerCase().includes(query) : text.includes(query);
+}
+
+/** Character positions of every (smart-case) occurrence of `query` in `text`. */
+export function findPositions(query: string, text: string): number[] {
+  if (!query) return [];
+  const t = query === query.toLowerCase() ? text.toLowerCase() : text;
+  const out: number[] = [];
+  for (let i = t.indexOf(query); i >= 0; i = t.indexOf(query, i + query.length)) {
+    for (let k = 0; k < query.length; k++) out.push(i + k);
+  }
+  return out;
 }
 
 export function formatDate(ms: number): string {
@@ -102,3 +113,5 @@ export interface PickerRow<V> {
   kind?: string;
   value: V;
 }
+
+export type ConfirmLine = string | { text: string; sub?: string; warn?: boolean };

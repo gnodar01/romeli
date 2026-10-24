@@ -17,12 +17,13 @@
   import { fuzzyFilter } from '../../core/fuzzy';
   import { ACTIONS, KeyResolver, eventToKey, type Action, type Pending } from '../../core/keymap';
   import { Model, type TagNode } from '../../core/model';
-  import { OpError, plural, type OpResult } from '../../core/store';
+  import { OpError, normalizeName, plural, type OpResult } from '../../core/store';
   import { formatPath, formatTagList, isAncestor, parsePath, pathKey, samePath } from '../../core/tags';
   import type { TagPath } from '../../core/types';
   import { UndoStack } from '../../core/undo';
   import Column from '../components/Column.svelte';
   import Confirm from '../components/Confirm.svelte';
+  import HelpPane from '../components/HelpPane.svelte';
   import ItemForm from '../components/ItemForm.svelte';
   import Picker from '../components/Picker.svelte';
   import Preview from '../components/Preview.svelte';
@@ -36,6 +37,7 @@
     refOf,
     tagKey,
     type Entry,
+    type ConfirmLine,
     type PickerRow,
     type Ref,
   } from './view';
@@ -56,10 +58,14 @@
     find: { query: string; backward: boolean } | null;
   }
 
+  /** What a picker row does on Enter, and optionally on Shift+Enter. */
+  type PickAction = { go: () => void; alt?: () => void };
+
   type Overlay =
     | { kind: 'prompt'; title: string; value?: string; hint?: string; onInput?: (v: string) => void; onSubmit: (v: string) => void; onCancel: () => void }
-    | { kind: 'confirm'; title: string; lines: string[]; onAnswer: (yes: boolean) => void }
-    | { kind: 'picker'; title: string; placeholder?: string; search: (q: string) => PickerRow<() => void>[] }
+    | { kind: 'confirm'; title: string; lines: ConfirmLine[]; onAnswer: (yes: boolean) => void }
+    | { kind: 'picker'; title: string; placeholder?: string; hint?: string; search: (q: string) => PickerRow<PickAction>[] }
+    | { kind: 'help' }
     | { kind: 'form'; heading: string; url: string; title: string; tags: string; focus: 'tags' | 'title' | 'url'; editing: string | null };
 
   const store = createStore();
@@ -115,6 +121,13 @@
   const previewChildren = $derived(hovered?.kind === 'tag' ? entriesOf(model, hovered.tag, plainOpts) : []);
   const selectedCount = $derived(Object.keys(tab.selected).length);
   const clipKeys = $derived(new Set(clip?.refs.map(keyOf) ?? []));
+  /** [n/m]: position of the cursor among the entries matching the active find query. */
+  const findStat = $derived.by(() => {
+    const q = tab.find?.query;
+    if (!q) return null;
+    const hits = entries.flatMap((e, i) => (findMatch(q, e.name) ? [i] : []));
+    return { query: q, n: hits.indexOf(cursor) + 1, m: hits.length };
+  });
   const mode = $derived(tab.visual ? (tab.visual.unset ? 'UNS' : 'VIS') : selectedCount ? 'SEL' : 'NOR');
 
   // ------------------------------------------------------------------ loading
@@ -129,7 +142,27 @@
     if (JSON.stringify(s.bindings) !== JSON.stringify(settings.bindings)) resolver = new KeyResolver(bindingsOf(s));
     settings = s;
     favicons = f;
+    const first = !loaded;
     loaded = true;
+    if (first) void offerNormalize();
+  }
+
+  /** Once per launch: offer to rename folders whose names contain the tag separators. */
+  async function offerNormalize() {
+    const bad = store.unnormalizedTags();
+    if (!bad.length || !settings.askNormalize || overlay) return;
+    const lines: ConfirmLine[] = [
+      `${plural(bad.length, 'folder name')} contain "," or "/", which also separate tags.`,
+      'Rename "," → ";" and "/" → "|"?  (u undoes)',
+      ...bad.slice(0, 8).map((t) => ({ text: `▸ ${formatPath(t.path)}`, sub: `→ ${normalizeName(t.name)}/` })),
+      ...(bad.length > 8 ? [`… and ${bad.length - 8} more`] : []),
+    ];
+    if (await confirm('Normalize folder names', lines)) {
+      await run(() => store.normalizeNames());
+    } else {
+      settings = await saveSettings({ askNormalize: false });
+      say('ok, won\'t ask again · normalize any time from settings', 'warn');
+    }
   }
 
   function applyModel(m: Model) {
@@ -271,7 +304,7 @@
 
   const titleOf = (url: string) => model.item(url)?.title || url;
 
-  function confirm(title: string, lines: string[]): Promise<boolean> {
+  function confirm(title: string, lines: ConfirmLine[]): Promise<boolean> {
     return new Promise((resolve) => {
       overlay = {
         kind: 'confirm',
@@ -345,22 +378,30 @@
     if (!refs.length) return;
     const items = itemRefs(refs);
     const tags = tagRefs(refs);
-    const lines: string[] = [];
+    const lines: ConfirmLine[] = [];
     const urls = [...new Set(items.map((r) => r.url))];
     if (all) {
-      for (const u of urls) lines.push(`· ${titleOf(u)}  (${plural(model.item(u)?.copies.length ?? 0, 'copy', 'copies')})`);
+      for (const u of urls) {
+        const tags = model.item(u)?.tags ?? [];
+        lines.push({ text: `· ${titleOf(u)}`, sub: `from ${tags.map(formatPath).join(', ')}`, warn: true });
+      }
     } else {
       for (const r of items) {
         const last = (model.item(r.url)?.copies.length ?? 0) <= 1;
-        lines.push(`· ${titleOf(r.url)}  from ${formatPath(r.path)}${last ? '  — last copy, bookmark deleted' : ''}`);
+        lines.push({
+          text: `· ${titleOf(r.url)}`,
+          sub: `from ${formatPath(r.path)}${last ? ' — last copy, bookmark deleted' : ''}`,
+          warn: last,
+        });
       }
     }
     for (const t of tags) {
       const d = store.describeTagDeletion(t.path);
-      lines.push(
-        `▸ ${formatPath(t.path)}  ${plural(d.tags - 1, 'subtag')}, ${plural(d.items, 'item')}` +
-          (d.orphaned ? `, ${d.orphaned} become untagged` : ''),
-      );
+      lines.push({
+        text: `▸ ${formatPath(t.path)}`,
+        sub: `${plural(d.tags - 1, 'subtag')}, ${plural(d.items, 'item')}` + (d.orphaned ? `, ${d.orphaned} become untagged` : ''),
+        warn: d.orphaned > 0,
+      });
     }
     const title = all ? `Delete ${plural(urls.length + tags.length, 'entry', 'entries')} everywhere` : `Delete ${plural(refs.length, 'entry', 'entries')}`;
     if (!(await confirm(title, lines))) return;
@@ -451,7 +492,7 @@
   function find(backward: boolean) {
     const start = cursor;
     const startHover = tab.hover;
-    void prompt(backward ? 'Find previous' : 'Find next', '', 'smart-case substring · n/N to repeat', (q) => {
+    void prompt(backward ? 'Find previous' : 'Find', '', 'smart-case · Enter keeps highlights · n/N next/prev · Esc clears', (q) => {
       tab.find = { query: q, backward };
       jumpToMatch(q, backward, start, true);
     }).then((v) => {
@@ -484,31 +525,48 @@
     });
   }
 
-  function jumpPicker(itemsOnly: boolean) {
-    type Cand = { key: string; text: string; label: string; sub?: string; kind: 'tag' | 'item'; go: () => void };
+  /** z: tags and items · s: items by title/url · S: tags only. Shift+Enter opens in a new (romeli) tab. */
+  function jumpPicker(scope: 'all' | 'items' | 'tags') {
+    type Cand = { key: string; text: string; label: string; sub?: string; kind: 'tag' | 'item'; act: PickAction };
     const cands: Cand[] = [];
-    if (!itemsOnly) {
+    if (scope !== 'items') {
       for (const t of model.allTags()) {
         const label = formatPath(t.path);
-        cands.push({ key: 't' + t.id, text: label, label, kind: 'tag', go: () => go(t.path) });
+        cands.push({
+          key: 't' + t.id,
+          text: label,
+          label,
+          sub: plural(t.tags.length + t.copies.length, 'entry', 'entries'),
+          kind: 'tag',
+          act: { go: () => go(t.path), alt: () => openTab(t.path) },
+        });
       }
     }
-    for (const i of model.items.values()) {
-      const primary = i.tags[0] ?? [];
-      const label = itemsOnly ? i.title || i.url : `${primary.length ? formatPath(primary) : ''}${i.title}`;
-      cands.push({
-        key: 'i' + i.url,
-        text: itemsOnly ? `${label} ${i.url}` : label,
-        label,
-        sub: itemsOnly ? i.url : hostOf(i.url),
-        kind: 'item',
-        go: () => go(primary, { hover: itemKey(i.url, primary) }),
-      });
+    if (scope !== 'tags') {
+      for (const i of model.items.values()) {
+        const primary = i.tags[0] ?? [];
+        const label = scope === 'items' ? i.title || i.url : `${primary.length ? formatPath(primary) : ''}${i.title}`;
+        cands.push({
+          key: 'i' + i.url,
+          text: scope === 'items' ? `${label} ${i.url}` : label,
+          label,
+          sub: scope === 'items' ? i.url : hostOf(i.url),
+          kind: 'item',
+          act: { go: () => go(primary, { hover: itemKey(i.url, primary) }), alt: () => void openUrl(i.url, 'new') },
+        });
+      }
     }
+    const titles = { all: 'jump', items: 'search bookmarks', tags: 'search tags' };
+    const hints = {
+      all: '↵ go · S-↵ open (bookmark: browser tab, tag: romeli tab)',
+      items: '↵ go to bookmark · S-↵ open in new browser tab',
+      tags: '↵ go to tag · S-↵ open in new romeli tab',
+    };
     overlay = {
       kind: 'picker',
-      title: itemsOnly ? 'search' : 'jump',
-      placeholder: itemsOnly ? 'title or url' : 'tag/path or item',
+      title: titles[scope],
+      placeholder: scope === 'items' ? 'title or url' : scope === 'tags' ? 'tag/path' : 'tag/path or bookmark',
+      hint: hints[scope],
       search: (q) =>
         fuzzyFilter(q, cands, (c) => c.text).map(({ value: c, match }) => ({
           key: c.key,
@@ -516,26 +574,14 @@
           positions: match.positions.filter((p) => p < c.label.length),
           sub: c.sub,
           kind: c.kind,
-          value: c.go,
+          value: c.act,
         })),
     };
   }
 
-  function help() {
-    const bindings = bindingsOf(settings);
-    const actions = Object.keys(ACTIONS) as Action[];
-    overlay = {
-      kind: 'picker',
-      title: 'help · Enter runs',
-      placeholder: 'filter keys or descriptions',
-      search: (q) =>
-        fuzzyFilter(q, actions, (a) => `${bindings[a].join(' ')}  ${ACTIONS[a]}`).map(({ value: a }) => ({
-          key: a,
-          label: bindings[a].join('  ') || '(unbound)',
-          sub: ACTIONS[a],
-          value: () => void exec(a),
-        })),
-    };
+  function openTab(path: TagPath) {
+    tabs.push(newTab(path));
+    switchTab(tabs.length - 1);
   }
 
   async function setSort(sort: SortKey, reverse: boolean) {
@@ -678,9 +724,11 @@
       case 'filter':
         return filter();
       case 'jump':
-        return jumpPicker(false);
+        return jumpPicker('all');
       case 'search':
-        return jumpPicker(true);
+        return jumpPicker('items');
+      case 'searchTags':
+        return jumpPicker('tags');
 
       case 'sortAlpha':
         return setSort('alpha', false);
@@ -706,8 +754,7 @@
         return say(`recursive view: ${tab.recursive ? 'on' : 'off'}`);
 
       case 'tabNew':
-        tabs.push(newTab(e?.kind === 'tag' ? e.tag.path : cur.path));
-        return switchTab(tabs.length - 1);
+        return openTab(e?.kind === 'tag' ? e.tag.path : cur.path);
       case 'tabClose':
         if (tabs.length === 1) return window.close();
         tabs.splice(ti, 1);
@@ -753,13 +800,14 @@
           return u ? `redid: ${u.label}` : 'nothing to redo';
         });
       case 'help':
-        return help();
+        overlay = { kind: 'help' };
+        return;
       case 'escape':
         if (tab.visual) return commitVisual();
+        if (tab.find) return void (tab.find = null);
         if (selectedCount) return clearSelection();
         if (tab.filter) return void (tab.filter = '');
         if (clip) return void (clip = null);
-        tab.find = null;
         return;
       case 'quit':
         return window.close();
@@ -818,6 +866,7 @@
         active
         {favicons}
         {mark}
+        find={tab.find?.query ?? ''}
         empty={loaded ? (tab.filter ? `no match for "${tab.filter}"` : 'empty · a to create') : 'loading…'}
       />
     </section>
@@ -839,6 +888,7 @@
     {#if busy}<span class="badge warn">working…</span>{/if}
     {#if clip}<span class="badge {clip.mode}">{clip.mode === 'yank' ? 'y' : 'x'} {clip.refs.length}</span>{/if}
     {#if selectedCount}<span class="badge sel">sel {selectedCount}</span>{/if}
+    {#if findStat}<span class="badge find">/{findStat.query} [{findStat.n || '-'}/{findStat.m}]</span>{/if}
     {#if tab.filter}<span class="badge filter">f: {tab.filter}</span>{/if}
     {#if tab.recursive}<span class="badge rec">R</span>{/if}
     <span class="badge sort">{sortLabel}</span>
@@ -861,13 +911,16 @@
     <Picker
       title={overlay.title}
       placeholder={overlay.placeholder}
+      hint={overlay.hint}
       search={overlay.search}
-      onPick={(fn) => {
+      onPick={(act, alt) => {
         overlay = null;
-        fn();
+        (alt && act.alt ? act.alt : act.go)();
       }}
       onCancel={() => (overlay = null)}
     />
+  {:else if overlay?.kind === 'help'}
+    <HelpPane bindings={bindingsOf(settings)} onClose={() => (overlay = null)} />
   {:else if overlay?.kind === 'form'}
     {@const o = overlay}
     <div class="overlay-backdrop">
@@ -995,6 +1048,9 @@
     color: var(--red);
   }
   .badge.sel {
+    color: var(--yellow);
+  }
+  .badge.find {
     color: var(--yellow);
   }
   .badge.filter,

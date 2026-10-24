@@ -71,3 +71,13 @@ describe('tag completion (the create-bookmark walkthrough)', async () => {
     expect(parseTagInput(m, 'TOOL/cli/new')).toEqual([['tool', 'CLI', 'new']]);
   });
 });
+
+import { ACTIONS, ACTION_GROUPS, DEFAULT_BINDINGS } from '../src/core/keymap';
+describe('keymap', () => {
+  it('groups every action exactly once and binds no key twice', () => {
+    const grouped = ACTION_GROUPS.flatMap(([, a]) => a);
+    expect([...grouped].sort()).toEqual(Object.keys(ACTIONS).sort());
+    const keys = Object.values(DEFAULT_BINDINGS).flat();
+    expect(keys.length).toBe(new Set(keys).size);
+  });
+});
