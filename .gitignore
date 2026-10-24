@@ -4,3 +4,4 @@ artifacts/
 .web-ext-profile/
 bookmarks*.html
 bookmarks*.json
+.env
