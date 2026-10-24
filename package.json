@@ -1,0 +1,28 @@
+{
+  "name": "romeli",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite build --watch",
+    "build": "vite build",
+    "test": "vitest run",
+    "check": "svelte-check --tsconfig ./tsconfig.json",
+    "start": "web-ext run --source-dir dist",
+    "lint:ext": "web-ext lint --source-dir dist",
+    "package": "npm run build && web-ext build --source-dir dist --artifacts-dir artifacts --overwrite-dest",
+    "harness": "vite --config harness/vite.config.ts",
+    "e2e": "node harness/drive.mjs /tmp && node harness/drive-create.mjs /tmp"
+  },
+  "devDependencies": {
+    "@sveltejs/vite-plugin-svelte": "^7.3.1",
+    "@types/firefox-webext-browser": "^143.0.1",
+    "puppeteer-core": "^25.16.0",
+    "svelte": "^5.57.2",
+    "svelte-check": "^4.7.7",
+    "typescript": "^6.0.3",
+    "vite": "^8.3.5",
+    "vitest": "^5.0.5",
+    "web-ext": "^10.8.0"
+  }
+}

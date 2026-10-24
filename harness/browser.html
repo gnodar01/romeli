@@ -1,0 +1,11 @@
+<!doctype html>
+<html lang="en">
+  <head><meta charset="utf-8" /><title>harness browser</title></head>
+  <body>
+    <div id="app"></div>
+    <script type="module">
+      await import('./shim.ts');
+      await import('../src/ui/browser/main.ts');
+    </script>
+  </body>
+</html>

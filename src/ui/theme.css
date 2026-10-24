@@ -1,0 +1,100 @@
+/* Dracula palette — https://draculatheme.com/contribute#color-palette */
+:root {
+  --bg: #282a36;
+  --bg-dark: #21222c;
+  --bg-darker: #191a21;
+  --cur: #44475a;
+  --fg: #f8f8f2;
+  --comment: #6272a4;
+  --cyan: #8be9fd;
+  --green: #50fa7b;
+  --orange: #ffb86c;
+  --pink: #ff79c6;
+  --purple: #bd93f9;
+  --red: #ff5555;
+  --yellow: #f1fa8c;
+  --mono: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', 'SF Mono', Menlo, Consolas, 'DejaVu Sans Mono', monospace;
+  --row: 20px;
+  color-scheme: dark;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  height: 100%;
+  background: var(--bg);
+  color: var(--fg);
+  font: 13px / var(--row) var(--mono);
+  overflow: hidden;
+}
+
+input {
+  font: inherit;
+  color: var(--fg);
+  background: transparent;
+  border: none;
+  outline: none;
+  padding: 0;
+  width: 100%;
+  caret-color: var(--pink);
+}
+
+::selection {
+  background: var(--cur);
+}
+
+.dim {
+  color: var(--comment);
+}
+
+.hl {
+  color: var(--pink);
+  font-weight: bold;
+}
+
+/* A TUI-ish box: single-line border with a title sitting on the top edge. */
+.box {
+  position: relative;
+  border: 1px solid var(--comment);
+  border-radius: 4px;
+  padding: 6px 10px;
+  background: var(--bg);
+}
+
+.box > .box-title {
+  position: absolute;
+  top: -10px;
+  left: 10px;
+  padding: 0 4px;
+  background: inherit;
+  color: var(--pink);
+  line-height: 18px;
+}
+
+.overlay-backdrop {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 12vh;
+  background: rgba(25, 26, 33, 0.55);
+  z-index: 10;
+}
+
+.scroll {
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--cur) transparent;
+}
+
+.favicon {
+  width: 14px;
+  height: 14px;
+  vertical-align: -2px;
+  image-rendering: auto;
+}
