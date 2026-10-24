@@ -11,6 +11,8 @@
     "start": "web-ext run --source-dir dist",
     "lint:ext": "web-ext lint --source-dir dist",
     "package": "npm run build && web-ext build --source-dir dist --artifacts-dir artifacts --overwrite-dest",
+    "bump": "node scripts/bump.mjs",
+    "sign": "npm test && npm run check && npm run build && npm run lint:ext && node --env-file-if-exists=.env node_modules/web-ext/bin/web-ext.js sign --source-dir dist --artifacts-dir artifacts --channel unlisted",
     "harness": "vite --config harness/vite.config.ts",
     "e2e": "node harness/drive.mjs /tmp && node harness/drive-create.mjs /tmp && node harness/drive-features.mjs /tmp && node harness/drive-theme.mjs /tmp"
   },
