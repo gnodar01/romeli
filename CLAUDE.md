@@ -91,5 +91,4 @@ scratchpad. Extend the drive scripts when you add behavior. Stop the harness aft
 ## State of the project
 
 v1 and the first round of feedback are implemented and verified through the harness. It hasn't been verified as an
-installed extension on real bookmarks by an agent. Nothing had been committed as of 2026-10-24 (only the initial
-`Init` commit exists).
+installed extension on real bookmarks by an agent. Check `git log` for history; the user commits their own work.
