@@ -5,3 +5,4 @@ artifacts/
 bookmarks*.html
 bookmarks*.json
 .env
+*.mov
