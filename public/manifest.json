@@ -5,7 +5,7 @@
   "description": "Keyboard-driven hierarchical-tag bookmark manager with a yazi-like interface.",
   "browser_specific_settings": {
     "gecko": {
-      "id": "romeli@ngogober",
+      "id": "romeli@gnodar",
       "strict_min_version": "140.0",
       "data_collection_permissions": {
         "required": [
