@@ -19,6 +19,8 @@ export const ACTIONS = {
   goRoot: 'Go to top-level tags',
   goToolbar: 'Go to toolbar/',
   goMenu: 'Go to menu/',
+  prevTagLocation: "Go to the item's previous tag",
+  nextTagLocation: "Go to the item's next tag",
   // opening
   open: 'Open in current tab (on a tag: enter)',
   openNew: 'Open in new tab (on a tag: open all items)',
@@ -93,7 +95,7 @@ export const describeAction = (a: Action, browser: string): string => ACTIONS[a]
 
 /** Sections for the help pane, in display order. */
 export const ACTION_GROUPS: [string, Action[]][] = [
-  ['navigation', ['up', 'down', 'parent', 'enter', 'top', 'bottom', 'halfUp', 'halfDown', 'pageUp', 'pageDown', 'back', 'forward', 'goRoot', 'goToolbar', 'goMenu']],
+  ['navigation', ['up', 'down', 'parent', 'enter', 'top', 'bottom', 'halfUp', 'halfDown', 'pageUp', 'pageDown', 'back', 'forward', 'goRoot', 'goToolbar', 'goMenu', 'prevTagLocation', 'nextTagLocation']],
   ['open', ['open', 'openNew']],
   ['selection', ['toggleSelect', 'visual', 'visualUnset', 'selectAll', 'invertSelection']],
   ['yank & paste', ['yank', 'cut', 'paste', 'pasteInto', 'cancelYank']],
@@ -122,6 +124,8 @@ export const DEFAULT_BINDINGS: Bindings = {
   goRoot: ['gh'],
   goToolbar: ['gb'],
   goMenu: ['gm'],
+  prevTagLocation: ['g['],
+  nextTagLocation: ['g]'],
   open: ['o', '<Enter>'],
   openNew: ['O', '<S-Enter>'],
   toggleSelect: ['<Space>'],

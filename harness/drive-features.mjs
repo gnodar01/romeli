@@ -103,6 +103,19 @@ await page.evaluate(() => window.__message({ type: 'reveal', url: 'https://not-b
 check((await header()).includes('linux/terminal/'), 'revealing an unbookmarked page stays put');
 await shot('23b-reveal');
 
+// 7c. g[ / g]: cycle through the hovered item's tags (yazi: tool/CLI/ primary, linux/terminal/ second)
+await page.evaluate(() => window.__message({ type: 'reveal', url: 'https://yazi-rs.github.io' })); await sleep(300);
+const where = async () => `${await header()} | ${await hoveredRow()}`;
+await press('g'); await press(']'); console.log('7c g]:', await where());
+check((await header()).includes('linux/terminal/') && (await hoveredRow())?.includes('yazi'), 'g] goes to the next tag, cursor on the item');
+check((await text('footer'))?.includes('[2/2]'), 'g] reports the position among the tags');
+await press('g'); await press(']'); console.log('7c g] again:', await where());
+check((await header()).includes('tool/CLI/'), 'g] wraps around');
+await press('g'); await press('['); console.log('7c g[:', await where());
+check((await header()).includes('linux/terminal/') && (await hoveredRow())?.includes('yazi'), 'g[ goes to the previous tag');
+await press('H'); check((await header()).includes('tool/CLI/'), 'H goes back from a tag jump');
+await shot('23c-tag-cycle');
+
 // 8. settings
 await page.goto(BASE + '/options.html'); await sleep(1000);
 console.log('8 bad names:', await text('section:nth-of-type(3)'));

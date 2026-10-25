@@ -664,6 +664,16 @@
         return go(['toolbar']);
       case 'goMenu':
         return go(['menu']);
+      case 'prevTagLocation':
+      case 'nextTagLocation': {
+        if (hovered?.kind !== 'item') return;
+        const { url, tags } = hovered.item;
+        if (tags.length < 2) return say('this is its only tag');
+        const i = tags.findIndex((t) => samePath(t, hovered.copy.tag.path));
+        const j = (i + (action === 'nextTagLocation' ? 1 : -1) + tags.length) % tags.length;
+        go(tags[j], { hover: itemKey(url, tags[j]) });
+        return say(`${formatPath(tags[j])} [${j + 1}/${tags.length}]`);
+      }
 
       case 'open':
       case 'openNew': {

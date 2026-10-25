@@ -48,6 +48,7 @@ doesn't let extensions change their own shortcuts: use `chrome://extensions/shor
 | `gg` `G` `C-u` `C-d` `C-b` `C-f` | top / bottom / half page / page |
 | `H` `L` | back / forward in history |
 | `gh` `gb` `gm` | top level / `toolbar/` / `menu/` (Firefox only) |
+| `g[` `g]` | on an item: go to its previous / next tag (wraps around) |
 | `o` / `Enter` | open in current tab (on a tag: enter) |
 | `O` | open in new tab (on a tag: open all its items) |
 | `Space` `v` `V` `C-a` `C-i` | toggle select / visual / visual-unset / select all / invert |
