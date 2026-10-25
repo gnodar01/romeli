@@ -6,3 +6,4 @@ bookmarks*.html
 bookmarks*.json
 .env
 *.mov
+tutorials/
