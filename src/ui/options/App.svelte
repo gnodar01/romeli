@@ -1,7 +1,17 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { createStore, DEFAULT_SETTINGS, loadSettings, saveSettings, type Settings } from '../../adapter/browser';
-  import { ACTIONS, DEFAULT_BINDINGS, describeAction, eventToKey, type Action } from '../../core/keymap';
+  import {
+    ACTIONS,
+    DEFAULT_BINDINGS,
+    describeAction,
+    eventToKey,
+    formatBindings,
+    fullBindings,
+    platformWarnings,
+    sanitizeBindings,
+    type Action,
+  } from '../../core/keymap';
   import { normalizeName, plural } from '../../core/store';
   import { formatPath } from '../../core/tags';
   import { platform } from '../../platform';
@@ -19,6 +29,9 @@
   let recording = $state<Action | null>(null);
   let recordingCmd = $state<string | null>(null);
   let badTags = $state<{ path: string; name: string }[]>([]);
+  let keysJson = $state('');
+  /** What the last keys import ignored or expects not to work on this OS. */
+  let importNotes = $state<string[]>([]);
   let statusTimer: ReturnType<typeof setTimeout> | undefined;
 
   const actions = (Object.keys(ACTIONS) as Action[]).filter((a) => !platform.hiddenActions.includes(a));
@@ -41,8 +54,11 @@
     badTags = store.unnormalizedTags().map((t) => ({ path: formatPath(t.path), name: t.name }));
   }
 
+  const fmtKeys = (b: Settings['bindings']) => formatBindings(fullBindings(b, actions));
+
   onMount(async () => {
     settings = await loadSettings();
+    keysJson = fmtKeys(settings.bindings);
     commands = await ext.commands.getAll();
     await loadBadTags();
   });
@@ -54,18 +70,37 @@
     if (!error) statusTimer = setTimeout(() => (status = null), 3000);
   }
 
-  async function setBinding(a: Action, value: string) {
+  async function saveBindings(bindings: Settings['bindings'], label: string) {
+    settings = await saveSettings({ bindings });
+    keysJson = fmtKeys(settings.bindings);
+    flash(label);
+  }
+
+  function setBinding(a: Action, value: string) {
     const keys = value.split(/\s+/).filter(Boolean);
     const bindings = { ...settings.bindings };
     if (keys.join(' ') === DEFAULT_BINDINGS[a].join(' ')) delete bindings[a];
     else bindings[a] = keys;
-    settings = await saveSettings({ bindings });
-    flash(`saved: ${describe(a)}`);
+    return saveBindings(bindings, `saved: ${describe(a)}`);
   }
 
-  async function resetAll() {
-    settings = await saveSettings({ bindings: {} });
-    flash('all keys reset to defaults');
+  const resetAll = () => saveBindings({}, 'all keys reset to defaults');
+
+  async function importKeys() {
+    let raw: unknown;
+    try {
+      raw = JSON.parse(keysJson);
+    } catch (e) {
+      return flash(`invalid JSON: ${(e as Error).message}`, true);
+    }
+    const { bindings, problems } = sanitizeBindings(raw);
+    await saveBindings(bindings, 'keys imported');
+    importNotes = [...problems.map((p) => `ignored: ${p}`), ...platformWarnings(bindings, isMac)];
+  }
+
+  async function copyKeys() {
+    await navigator.clipboard.writeText(keysJson);
+    flash('keys JSON copied');
   }
 
   /** Record a single key press (e.g. <C-x>) and append it to the binding being edited. */
@@ -249,6 +284,25 @@
         </div>
       {/each}
     </div>
+
+    <h2>JSON</h2>
+    <p class="dim">
+      Every action's keys, for sharing or backup (the theme has its own). Edit or paste, then apply; omitted actions
+      keep their defaults. Moving between macOS and Windows/Linux: ⌘ keys (<code>&lt;D-…&gt;</code>) become the
+      Windows/Super key, and a few Ctrl keys are taken by the browser there; applying warns about those.
+    </p>
+    <textarea class="json scroll" bind:value={keysJson} spellcheck="false" rows="12"></textarea>
+    <div class="toolbar">
+      <button onclick={importKeys}>apply JSON</button>
+      <button onclick={copyKeys}>copy</button>
+      <button
+        onclick={() => {
+          keysJson = fmtKeys(settings.bindings);
+          importNotes = [];
+        }}>revert</button
+      >
+    </div>
+    {#each importNotes as n}<div class="conflict">{n}</div>{/each}
   </section>
 
   <section class="box">
@@ -308,6 +362,26 @@
     }
     p {
       margin: 0 0 8px;
+    }
+    h2 {
+      font-size: inherit;
+      font-weight: normal;
+      color: var(--accent);
+      margin: 14px 0 4px;
+    }
+    textarea {
+      font: inherit;
+      color: var(--fg);
+      border: 1px solid var(--border);
+      width: 100%;
+      resize: vertical;
+      background: var(--popup-bg);
+      padding: 4px 8px;
+      caret-color: var(--caret);
+    }
+    textarea:focus {
+      outline: none;
+      border-color: var(--accent);
     }
     code {
       color: var(--key);

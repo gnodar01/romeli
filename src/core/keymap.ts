@@ -202,9 +202,24 @@ const NAMED: Record<string, string> = {
   Insert: 'Insert',
 };
 
+type KeyEventLike = Pick<KeyboardEvent, 'key' | 'ctrlKey' | 'altKey' | 'metaKey' | 'shiftKey'> & { code?: string };
+
+/**
+ * The character a key press stands for. With Alt held, macOS's Option produces another character
+ * (⌥K → '˚', ⌥E → a dead key), so a letter or digit key falls back to its physical key: `<A-k>`
+ * then means the same key on every OS.
+ */
+function keyChar(e: KeyEventLike): string {
+  const printable = e.key.length === 1 && e.key >= ' ' && e.key <= '~';
+  if (!e.altKey || printable || !e.code) return e.key;
+  if (/^Key[A-Z]$/.test(e.code)) return e.shiftKey ? e.code[3] : e.code[3].toLowerCase();
+  if (/^Digit\d$/.test(e.code)) return e.code[5];
+  return e.key;
+}
+
 /** Convert a keyboard event into a key token ('j', 'G', '<C-u>', '<S-Tab>'), or null for bare modifiers. */
-export function eventToKey(e: Pick<KeyboardEvent, 'key' | 'ctrlKey' | 'altKey' | 'metaKey' | 'shiftKey'>): string | null {
-  const { key } = e;
+export function eventToKey(e: KeyEventLike): string | null {
+  const key = keyChar(e);
   if (['Shift', 'Control', 'Alt', 'Meta', 'CapsLock', 'Dead', 'Unidentified'].includes(key)) return null;
   const mods = (e.ctrlKey ? 'C-' : '') + (e.altKey ? 'A-' : '') + (e.metaKey ? 'D-' : '');
   const named = NAMED[key] ?? (/^F\d{1,2}$/.test(key) ? key : null);
@@ -240,6 +255,62 @@ export function mergeBindings(overrides: Partial<Record<string, string[]>> | und
     if (k in ACTIONS && Array.isArray(v)) out[k as Action] = v.filter((s) => typeof s === 'string' && s.length);
   }
   return out;
+}
+
+/** Every action's keys, for the JSON export: the defaults with the user's overrides applied. */
+export function fullBindings(overrides: Partial<Record<string, string[]>> | undefined, actions: readonly Action[]): Partial<Bindings> {
+  const all = mergeBindings(overrides);
+  return Object.fromEntries(actions.map((a) => [a, all[a]]));
+}
+
+/** JSON with one action per line: `"up": ["k", "<Up>"]`. */
+export function formatBindings(b: Partial<Bindings>): string {
+  const lines = Object.entries(b).map(([a, keys]) => `  ${JSON.stringify(a)}: [${keys!.map((k) => JSON.stringify(k)).join(', ')}]`);
+  return `{\n${lines.join(',\n')}\n}`;
+}
+
+/**
+ * Parse imported JSON ({ action: ["k", "<Up>"] }, or a space-separated string) into overrides:
+ * only actions whose keys differ from the defaults. Omitted actions keep their defaults.
+ */
+export function sanitizeBindings(raw: unknown): { bindings: Partial<Record<Action, string[]>>; problems: string[] } {
+  const problems: string[] = [];
+  const bindings: Partial<Record<Action, string[]>> = {};
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return { bindings, problems: ['not an object'] };
+  for (const [k, v] of Object.entries(raw)) {
+    if (!Object.hasOwn(ACTIONS, k)) {
+      problems.push(`unknown action "${k}"`);
+      continue;
+    }
+    const list = typeof v === 'string' ? v.split(/\s+/) : Array.isArray(v) ? v : null;
+    if (!list || list.some((s) => typeof s !== 'string' || /\s/.test(s.trim()))) {
+      problems.push(`${k}: expected a list of keys`);
+      continue;
+    }
+    const keys = (list as string[]).map((s) => s.trim()).filter(Boolean);
+    const a = k as Action;
+    if (keys.join(' ') !== DEFAULT_BINDINGS[a].join(' ')) bindings[a] = keys;
+  }
+  return { bindings, problems };
+}
+
+/** Ctrl shortcuts Firefox and Chrome keep for themselves on Windows/Linux (on macOS they're on ⌘). */
+const RESERVED_CTRL = new Set(['<C-w>', '<C-t>', '<C-n>', '<C-q>', '<C-Tab>', '<C-S-Tab>']);
+
+/** Keys in `bindings` that are unlikely to work on this OS (e.g. after importing another machine's keys). */
+export function platformWarnings(bindings: Partial<Record<Action, string[]>>, isMac: boolean): string[] {
+  const out = new Set<string>();
+  for (const [a, seqs] of Object.entries(bindings) as [Action, string[]][]) {
+    for (const k of seqs.flatMap(parseKeys)) {
+      const m = /^<((?:[CADS]-)+)(.+)>$/.exec(k);
+      if (!m) continue;
+      const [, mods, base] = m;
+      if (!isMac && mods.includes('D-')) out.add(`${k} (${a}): ⌘ is the Windows/Super key here, usually taken by the OS`);
+      if (mods.includes('A-') && base.length === 1 && !(base >= ' ' && base <= '~')) out.add(`${k} (${a}): a macOS ⌥ character; write the plain key instead`);
+      if (!isMac && RESERVED_CTRL.has(k)) out.add(`${k} (${a}): reserved by the browser on Windows/Linux`);
+    }
+  }
+  return [...out];
 }
 
 export interface Pending {

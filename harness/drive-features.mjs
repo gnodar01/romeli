@@ -122,6 +122,26 @@ console.log('8 bad names:', await text('section:nth-of-type(3)'));
 await page.focus('#key-down'); await sleep(100);
 await shot('24-settings-focus');
 check(!(await page.$('#key-goMenu')) === (TARGET === 'chrome'), 'goMenu is configurable only on Firefox');
+
+// 8b. keys JSON: export lists every action; import keeps the differences, reports junk and OS problems
+const keysBox = 'section:nth-of-type(2) textarea';
+const exported = JSON.parse(await page.$eval(keysBox, (t) => t.value));
+check(exported.nextTagLocation?.[0] === 'g]' && ('goMenu' in exported) === (TARGET !== 'chrome'), 'keys JSON exports every available action');
+const setKeysJson = (v) => page.$eval(keysBox, (t, v) => { t.value = v; t.dispatchEvent(new Event('input')); }, v);
+await setKeysJson(JSON.stringify({ ...exported, up: ['K'], down: ['<A-˚>'], bogus: ['x'] }));
+await page.$$eval('section:nth-of-type(2) button', (bs) => bs.find((b) => b.textContent === 'apply JSON').click());
+await sleep(400);
+const notes = await page.$$eval('section:nth-of-type(2) > .conflict', (n) => n.map((x) => x.textContent));
+console.log('8b import notes:', notes);
+check((await page.$eval('#key-up', (i) => i.value)) === 'K', 'imported keys are applied');
+check(notes.some((n) => n.includes('bogus')) && notes.some((n) => n.includes('<A-˚>')), 'import reports unknown actions and ⌥ characters');
+check(Object.keys(JSON.parse(await page.$eval(keysBox, (t) => t.value))).length === Object.keys(exported).length, 'JSON is rewritten after import');
+await page.$eval(keysBox, (t) => t.scrollIntoView({ block: 'center' }));
+await shot('24b-keys-json');
+await page.evaluate(() => window.scrollTo(0, 0));
+await page.$$eval('section:nth-of-type(2) button', (bs) => bs.find((b) => b.textContent === 'reset all').click());
+await sleep(300);
+check((await page.$eval('#key-up', (i) => i.value)) === 'k <Up>' && JSON.parse(await page.$eval(keysBox, (t) => t.value)).up[0] === 'k', 'reset all also resets the JSON');
 if (TARGET === 'chrome') {
   // Chrome can't change extension shortcuts itself: read-only list + link to its settings page.
   const shortcuts = await text('section:nth-of-type(1)');

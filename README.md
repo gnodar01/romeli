@@ -71,6 +71,11 @@ doesn't let extensions change their own shortcuts: use `chrome://extensions/shor
 | `?` `~` `F1` | key reference pane (`j/k` scroll, `J/K` half page, `gg/G`, `Esc`) |
 | `Esc` `q` | cancel / close |
 
+The keymap can be copied out and pasted back in as JSON (Settings → *browser keys* → JSON), separately from the
+theme: one line per action, and actions left out keep their defaults. ⌥ keys are written by the physical key
+(`<A-k>`, not macOS's `˚`), so they mean the same everywhere. Applying warns about keys unlikely to work on this OS:
+⌘ keys (`<D-…>`) off macOS, and Ctrl keys Firefox and Chrome keep for themselves on Windows/Linux (`C-w`, `C-t`…).
+
 ### Theme
 
 Settings → *theme*. The palette (13 colors, Dracula by default) drives about 50 semantic roles (selection, tags,

@@ -236,14 +236,9 @@
 </section>
 
 <style>
-  h2,
   h3 {
     font-size: inherit;
     font-weight: normal;
-    color: var(--accent);
-    margin: 14px 0 4px;
-  }
-  h3 {
     color: var(--dim);
     margin: 8px 0 2px;
   }
@@ -270,23 +265,6 @@
   }
   input[type='number'] {
     appearance: textfield;
-  }
-  textarea {
-    font: inherit;
-    color: var(--fg);
-    background: var(--button-bg);
-    border: 1px solid var(--border);
-  }
-  textarea:focus {
-    outline: none;
-    border-color: var(--accent);
-  }
-  textarea {
-    width: 100%;
-    resize: vertical;
-    background: var(--popup-bg);
-    padding: 4px 8px;
-    caret-color: var(--caret);
   }
   button:disabled {
     opacity: 0.4;

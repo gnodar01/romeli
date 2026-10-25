@@ -69,7 +69,7 @@ ImageMagick: `compare -metric AE before.png after.png /dev/null` prints 0 when t
   - `browser/App.svelte`: the main app. It holds state, the action dispatcher `exec()`, and the overlays.
   - `browser/view.ts`: entry lists, sorting, stable entry keys, and shared UI types.
   - `create/`: the create/edit popup.
-  - `options/`: settings (keymap, global shortcuts, folder-name normalization, `ThemeEditor.svelte`). App's styles sit in a `main :global { … }` block so child components like ThemeEditor share the row, input and button styles.
+  - `options/`: settings (keymap with its own JSON import/export, global shortcuts, folder-name normalization, `ThemeEditor.svelte`). App's styles sit in a `main :global { … }` block so child components like ThemeEditor share the row, input and button styles.
   - `components/`: shared components.
   - `theme.css`: base styles only. Colors, font and row height come from the generated theme.
 - `harness/`: dev-only. `shim.ts` fakes the API (as `browser`, or as `chrome` with TARGET=chrome) using
