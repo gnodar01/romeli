@@ -159,10 +159,18 @@ ImageMagick: `compare -metric AE before.png after.png /dev/null` prints 0 when t
   - Verified by an agent through both harnesses and as a real extension in Chrome for Testing: bookmark ops, undo,
     popups, `_favicon`, options, and a 150-item batch under the `storage.sync` write quota.
   - The user then QA'd it by hand in real Chrome (`npm run start:chrome`) and reported everything working.
+- Post-port features (2026-10-25), verified through both harnesses: the open-browser shortcut / toolbar button
+  reveals the current tab's page at its primary tag (`?reveal=` on open, a `reveal` runtime message to an open window);
+  `g[`/`g]` cycle an item's tags; the keymap has its own JSON import/export with per-OS warnings; ⌥ keys are
+  recorded by physical key (`eventToKey`).
+- "Modified" dates: neither browser exposes a bookmark's last-modified time to extensions (only folders'
+  `dateGroupModified`; Chrome also has `dateLastUsed`), so sort-by-modified orders items by `dateAdded`. The user
+  looked at the options (tracking edits ourselves, deriving a date, showing last visited) and chose to leave it as is.
 - Never verified by an agent:
   - the installed Firefox extension on real bookmarks;
   - Chrome's account (`syncing`) bookmarks on a signed-in profile;
-  - real keyboard commands (and so `activeTab` on create-bookmark);
+  - real keyboard commands (and so `activeTab` on create-bookmark and the open-browser reveal);
+  - a real macOS ⌥ key press producing `<A-k>` (puppeteer can't type Option characters);
   - the theme's color pickers, the JSON copy button, and native controls actually rendering light or dark.
 - `npm run start:chrome` shows an "unsupported command-line flag: --disable-blink-features=AutomationControlled" bar.
   It's added by web-ext and harmless. Passing `--args=--enable-blink-features=AutomationControlled` hides it, but then
