@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite build --watch",
+    "dev:chrome": "TARGET=chrome vite build --watch",
     "build": "npm run build:firefox && npm run build:chrome",
     "build:firefox": "TARGET=firefox vite build",
     "build:chrome": "TARGET=chrome vite build",
@@ -12,6 +13,7 @@
     "check": "svelte-check --tsconfig ./tsconfig.json",
     "check:dist": "node scripts/check-dist.mjs",
     "start": "web-ext run --source-dir dist/firefox",
+    "start:chrome": "web-ext run -t chromium --source-dir dist/chrome",
     "lint:ext": "web-ext lint --source-dir dist/firefox",
     "package": "npm run build:firefox && web-ext build --source-dir dist/firefox --artifacts-dir artifacts --overwrite-dest",
     "package:chrome": "npm run build:chrome && node scripts/zip-chrome.mjs",

@@ -14,6 +14,7 @@ npm run check      # svelte-check (must stay at 0 errors / 0 warnings)
 npm run check:dist # each dist/ has only its own browser's code; manifest files exist
 npm run lint:ext   # web-ext lint dist/firefox; expected: 0 errors, 2 benign warnings (Android min version, Svelte innerHTML)
 npm start          # web-ext run: temporary install in a fresh Firefox profile (opens a real window)
+npm run start:chrome    # same for Chrome: your installed Chrome, fresh temporary profile (needs build:chrome first)
 npm run harness    # Firefox-shaped mock UI at localhost:5199/harness/{browser,create,options}.html
 npm run harness:chrome  # Chrome-shaped mock UI (API exposed as `chrome`) at localhost:5198
 npm run e2e [outdir]    # drive*.mjs against both harnesses (starts them if needed); screenshots in <outdir>/<target>/

@@ -85,6 +85,7 @@ live to every open romeli window.
 npm install
 npm run build        # → dist/firefox and dist/chrome (build:firefox / build:chrome for one)
 npm start            # web-ext run (temporary install in a fresh Firefox profile)
+npm run start:chrome # the same in Chrome (fresh temporary profile; run build:chrome first)
 npm test             # vitest: tag semantics on Firefox- and Chrome-shaped trees, ordering, ops + undo, fuzzy/completion
 npm run check        # svelte-check (TypeScript)
 npm run package      # Firefox zip into artifacts/
