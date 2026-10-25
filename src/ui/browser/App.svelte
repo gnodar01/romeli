@@ -4,6 +4,7 @@
     DEFAULT_SETTINGS,
     bindingsOf,
     createStore,
+    faviconFor,
     hostOf,
     loadFavicons,
     loadSettings,
@@ -14,8 +15,10 @@
     type Settings,
     type SortKey,
   } from '../../adapter/browser';
+  import { platform } from '../../platform';
+  import { ext } from '../../platform/ext';
   import { fuzzyFilter } from '../../core/fuzzy';
-  import { ACTIONS, KeyResolver, eventToKey, type Action, type Pending } from '../../core/keymap';
+  import { describeAction, KeyResolver, eventToKey, type Action, type Pending } from '../../core/keymap';
   import { Model, type TagNode } from '../../core/model';
   import { OpError, normalizeName, plural, type OpResult } from '../../core/store';
   import { formatPath, formatTagList, isAncestor, parsePath, pathKey, samePath } from '../../core/tags';
@@ -85,7 +88,7 @@
     find: null,
   });
 
-  let model = $state.raw<Model>(new Model([]));
+  let model = $state.raw<Model>(new Model());
   let settings = $state.raw<Settings>(DEFAULT_SETTINGS);
   let favicons = $state.raw<Favicons>({});
   let resolver = new KeyResolver(bindingsOf(DEFAULT_SETTINGS));
@@ -177,10 +180,10 @@
     void refresh();
     const off = onExternalChange(() => void refresh());
     const onLocal = (_: unknown, area: string) => area === 'local' && loadFavicons().then((f) => (favicons = f));
-    browser.storage.onChanged.addListener(onLocal);
+    ext.storage.onChanged.addListener(onLocal);
     return () => {
       off();
-      browser.storage.onChanged.removeListener(onLocal);
+      ext.storage.onChanged.removeListener(onLocal);
     };
   });
 
@@ -417,7 +420,7 @@
   async function rename() {
     const e = hovered;
     if (!e) return;
-    if (e.kind === 'tag' && e.tag.fixed) return say(`${formatPath(e.tag.path)} is a Firefox root folder`, 'warn');
+    if (e.kind === 'tag' && e.tag.fixed) return say(`${formatPath(e.tag.path)} is a ${platform.browserName} root folder`, 'warn');
     const v = await prompt('Rename', e.kind === 'tag' ? e.tag.name : e.copy.title);
     if (v === null || !v.trim()) return;
     const name = v.trim();
@@ -688,7 +691,7 @@
         const refs = targets();
         if (!refs.length) return;
         if (action === 'cut' && refs.some((r) => r.kind === 'tag' && model.tag(r.path)?.fixed)) {
-          return say('Firefox root folders cannot be moved', 'warn');
+          return say(`${platform.browserName} root folders cannot be moved`, 'warn');
         }
         clip = { mode: action, refs };
         clearSelection();
@@ -898,7 +901,7 @@
   {#if pending}
     <div class="whichkey">
       {#each pending.next as [k, a]}
-        <div><span class="k">{pending.keys.join('')}{k}</span> <span class="dim">{ACTIONS[a]}</span></div>
+        <div><span class="k">{pending.keys.join('')}{k}</span> <span class="dim">{describeAction(a, platform.browserName)}</span></div>
       {/each}
     </div>
   {/if}
@@ -931,7 +934,7 @@
         title={o.title}
         tags={o.tags}
         focus={o.focus}
-        favicon={favicons[hostOf(o.url)]}
+        favicon={faviconFor(favicons, o.url)}
         onSave={(u, t, list) => saveForm(o.editing, u, t, list)}
         onCancel={() => (overlay = null)}
       />

@@ -1,4 +1,6 @@
 import { activeNormalTab, saveFavicon } from '../adapter/browser';
+import { platform } from '../platform';
+import { ext } from '../platform/ext';
 
 type Kind = 'browser' | 'create';
 
@@ -10,14 +12,14 @@ const SIZES: Record<Kind, { width: number; height: number }> = {
 /** Open (or focus) romeli's popup window. The create window is always reopened with fresh params. */
 async function openWindow(kind: Kind, query = '') {
   const key = `win.${kind}`;
-  const id = (await browser.storage.session.get(key))[key] as number | undefined;
+  const id = (await ext.storage.session.get(key))[key] as number | undefined;
   if (id !== undefined) {
     try {
       if (kind === 'browser') {
-        await browser.windows.update(id, { focused: true });
+        await ext.windows.update(id, { focused: true });
         return;
       }
-      await browser.windows.remove(id);
+      await ext.windows.remove(id);
     } catch {
       // window is gone
     }
@@ -25,7 +27,7 @@ async function openWindow(kind: Kind, query = '') {
   const size = SIZES[kind];
   let pos = {};
   try {
-    const parent = await browser.windows.getLastFocused({ windowTypes: ['normal'] });
+    const parent = await ext.windows.getLastFocused({ windowTypes: ['normal'] });
     if (parent.width && parent.height) {
       pos = {
         left: Math.round((parent.left ?? 0) + (parent.width - size.width) / 2),
@@ -35,13 +37,13 @@ async function openWindow(kind: Kind, query = '') {
   } catch {
     // no normal window
   }
-  const win = await browser.windows.create({
+  const win = await ext.windows.create({
     type: 'popup',
-    url: browser.runtime.getURL(`ui/${kind}/index.html${query}`),
+    url: ext.runtime.getURL(`ui/${kind}/index.html${query}`),
     ...size,
     ...pos,
   });
-  await browser.storage.session.set({ [key]: win.id });
+  await ext.storage.session.set({ [key]: win.id });
 }
 
 async function createBookmark() {
@@ -49,35 +51,26 @@ async function createBookmark() {
   const params = new URLSearchParams();
   if (tab?.url) params.set('url', tab.url);
   if (tab?.title) params.set('title', tab.title);
-  if (tab?.url) await saveFavicon(tab.url, tab.favIconUrl);
+  if (tab?.url && !platform.favicon) await saveFavicon(tab.url, tab.favIconUrl);
   await openWindow('create', `?${params}`);
 }
 
-browser.commands.onCommand.addListener((command) => {
+ext.commands.onCommand.addListener((command) => {
   if (command === 'open-browser') void openWindow('browser');
   if (command === 'create-bookmark') void createBookmark();
 });
 
-browser.action.onClicked.addListener(() => void openWindow('browser'));
+ext.action.onClicked.addListener(() => void openWindow('browser'));
 
-browser.windows.onRemoved.addListener(async (id) => {
-  const all = await browser.storage.session.get(null);
+ext.windows.onRemoved.addListener(async (id) => {
+  const all = await ext.storage.session.get(null);
   const stale = Object.keys(all).filter((k) => k.startsWith('win.') && all[k] === id);
-  if (stale.length) await browser.storage.session.remove(stale);
+  if (stale.length) await ext.storage.session.remove(stale);
 });
 
-// Favicons: extensions can't read Firefox's favicon cache, so remember the icon of any
-// bookmarked page the user visits.
-browser.tabs.onUpdated.addListener(
-  async (_id, change, tab) => {
-    if (!change.favIconUrl || !tab.url) return;
-    const hits = await browser.bookmarks.search({ url: tab.url }).catch(() => []);
-    if (hits.length) await saveFavicon(tab.url, change.favIconUrl);
-  },
-  { properties: ['favIconUrl'] },
-);
+platform.startBackground({ saveFavicon });
 
-browser.runtime.onMessage.addListener((msg: { type?: string; query?: string }) => {
+ext.runtime.onMessage.addListener((msg: { type?: string; query?: string }) => {
   if (msg?.type === 'open-browser') return openWindow('browser', msg.query ?? '');
   if (msg?.type === 'open-create') return openWindow('create', msg.query ?? '');
   return undefined;

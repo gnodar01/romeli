@@ -1,0 +1,35 @@
+{
+  "permanent": [
+    {
+      "id": "1",
+      "folderType": "bookmarks-bar",
+      "hasType": false
+    },
+    {
+      "id": "2",
+      "folderType": "other",
+      "hasType": false
+    }
+  ],
+  "sameFolderMoveTo2": "bacd",
+  "sameFolderMoveTo0": "abcd",
+  "sameFolderMoveTo4": "bcda",
+  "sameFolderMoveTo5Fails": true,
+  "dateAddedKeptByMove": true,
+  "crossFolderMove": [
+    "da",
+    "bc"
+  ],
+  "crossFolderMoveTo3Fails": true,
+  "createIndexTooBigFails": true,
+  "createAtIndex0": "zda",
+  "bookmarkHasType": false,
+  "folderHasUrl": false,
+  "updateKeepsId": true,
+  "movePermanentFails": true,
+  "renamePermanentFails": true,
+  "createInRootFails": true,
+  "removePermanentFails": true,
+  "removeNonEmptyFails": true,
+  "cleanedUp": true
+}

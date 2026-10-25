@@ -1,8 +1,11 @@
 /**
- * Dev-only stand-in for the WebExtension `browser` global, so the UI can run as a plain page
- * (vite dev server + puppeteer) with a seeded in-memory bookmark tree.
+ * Dev-only stand-in for the WebExtension API, so the UI can run as a plain page (vite dev server +
+ * puppeteer) with a seeded in-memory bookmark tree. With TARGET=chrome it imitates Chrome: the tree
+ * has Chrome's shape, the API is exposed as `chrome` (not `browser`), and there's no commands.update.
  */
 import { MemoryKV, MockBookmarks } from '../tests/mock';
+
+const isChrome = __TARGET__ === 'chrome';
 
 type Listener = (...args: unknown[]) => void;
 const event = () => {
@@ -14,7 +17,7 @@ const event = () => {
   };
 };
 
-const api = new MockBookmarks();
+const api = new MockBookmarks(isChrome ? 'chrome' : 'firefox');
 api.seed({
   linux: {
     terminal: { Alacritty: 'https://alacritty.org', 'kitty terminal': 'https://sw.kovidgoyal.net/kitty/' },
@@ -35,6 +38,7 @@ api.seed({
 await api.create({ parentId: [...api.nodes.values()].find((n) => n.title === 'terminal')!.id, title: 'yazi', url: 'https://yazi-rs.github.io' });
 
 const onCreated = event(), onRemoved = event(), onChanged = event(), onMoved = event(), storageChanged = event();
+const onChildrenReordered = event(), onImportEnded = event();
 const wrap = <A extends unknown[], R>(f: (...a: A) => Promise<R>, ev: { fire: Listener }) =>
   async (...a: A) => {
     const r = await f(...a);
@@ -61,7 +65,20 @@ const calls: unknown[] = [];
 (globalThis as any).__calls = calls;
 (globalThis as any).__api = api;
 
-(globalThis as any).browser = {
+/** Stand-in for Chrome's `_favicon` endpoint: a coloured square per host. */
+const fakeFavicon = (path: string) => {
+  const host = new URL(new URLSearchParams(path.split('?')[1]).get('pageUrl') ?? '').host;
+  const hue = [...host].reduce((h, c) => (h * 31 + c.charCodeAt(0)) % 360, 0);
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><rect width="16" height="16" rx="3" fill="hsl(${hue},60%,60%)"/></svg>`;
+  return 'data:image/svg+xml,' + encodeURIComponent(svg);
+};
+
+const commands = [
+  { name: 'open-browser', description: 'Open the romeli bookmark browser', shortcut: isChrome ? '⌃⇧M' : 'Alt+Shift+M' },
+  { name: 'create-bookmark', description: 'Bookmark the current page with romeli', shortcut: isChrome ? '⌃⇧B' : 'Alt+Shift+B' },
+];
+
+const ext = {
   bookmarks: {
     getTree: () => api.getTree(),
     create: wrap(api.create.bind(api), onCreated),
@@ -84,14 +101,11 @@ const calls: unknown[] = [];
     update: async (id: number, p: unknown) => calls.push(['tabs.update', id, p]),
     create: async (p: unknown) => calls.push(['tabs.create', p]),
   },
-  commands: {
-    getAll: async () => [
-      { name: 'open-browser', description: 'Open the romeli bookmark browser', shortcut: 'Alt+Shift+M' },
-      { name: 'create-bookmark', description: 'Bookmark the current page with romeli', shortcut: 'Alt+Shift+B' },
-    ],
-    update: async () => {},
-    reset: async () => {},
-  },
-  runtime: { getURL: (p: string) => '/' + p },
+  commands: isChrome
+    ? { getAll: async () => commands }
+    : { getAll: async () => commands, update: async () => {}, reset: async () => {} },
+  runtime: { getURL: (p: string) => (p.startsWith('/_favicon/') ? fakeFavicon(p) : '/' + p) },
 };
+if (isChrome) Object.assign(ext.bookmarks, { onChildrenReordered, onImportEnded });
+(globalThis as any)[isChrome ? 'chrome' : 'browser'] = ext;
 window.close = () => calls.push(['window.close']);

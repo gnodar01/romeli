@@ -56,8 +56,8 @@ export const ACTIONS = {
   sortCreatedRev: 'Sort by date added (reverse)',
   sortModified: 'Sort by date modified',
   sortModifiedRev: 'Sort by date modified (reverse)',
-  sortNative: 'Sort by Firefox order',
-  sortNativeRev: 'Sort by Firefox order (reverse)',
+  sortNative: 'Sort by {browser} order',
+  sortNativeRev: 'Sort by {browser} order (reverse)',
   toggleTagsFirst: 'Toggle tags first',
   toggleRecursive: 'Toggle recursive view',
   // tabs
@@ -87,6 +87,9 @@ export const ACTIONS = {
 } as const;
 
 export type Action = keyof typeof ACTIONS;
+
+/** An action's description, with `{browser}` filled in (e.g. "Sort by Firefox order"). */
+export const describeAction = (a: Action, browser: string): string => ACTIONS[a].replace('{browser}', browser);
 
 /** Sections for the help pane, in display order. */
 export const ACTION_GROUPS: [string, Action[]][] = [

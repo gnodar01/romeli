@@ -11,7 +11,7 @@ import {
   removeTag,
   replaceTag,
 } from './tags';
-import type { BookmarksApi, TagPath } from './types';
+import type { BookmarksApi, RootResolver, TagPath } from './types';
 
 /** Everything needed to recreate an item. `tags: []` means the item did not exist. */
 export interface ItemSnapshot {
@@ -45,13 +45,14 @@ export class OpError extends Error {}
  * URLs and tag paths, which stay meaningful after ids change.
  */
 export class Store {
-  model: Model = new Model([]);
+  model: Model = new Model();
   overrides: Overrides = new Map();
   private orders: OrderStore;
 
   constructor(
     private api: BookmarksApi,
     orders: OrderStore,
+    private resolveRoots: RootResolver,
   ) {
     this.orders = orders;
   }
@@ -62,7 +63,7 @@ export class Store {
   }
 
   async reload(): Promise<Model> {
-    this.model = new Model(await this.api.getTree(), this.overrides);
+    this.model = new Model(this.resolveRoots(await this.api.getTree()), this.overrides);
     return this.model;
   }
 
@@ -270,7 +271,7 @@ export class Store {
   private requireTag(path: TagPath, mutable = true): TagNode {
     const tag = this.model.tag(path);
     if (!tag) throw new OpError(`no tag ${formatPath(path)}`);
-    if (mutable && tag.fixed) throw new OpError(`${formatPath(path)} is a Firefox root folder and cannot be changed`);
+    if (mutable && tag.fixed) throw new OpError(`${formatPath(path)} is a built-in root folder and cannot be changed`);
     return tag;
   }
 

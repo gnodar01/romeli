@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { Favicons } from '../../adapter/browser';
-  import { hostOf } from '../../adapter/browser';
+  import { faviconFor, hostOf } from '../../adapter/browser';
   import type { Model } from '../../core/model';
   import { formatPath, samePath } from '../../core/tags';
   import { formatDate, type Entry } from '../browser/view';
@@ -19,7 +19,7 @@
   {:else if entry.kind === 'tag'}
     <Column entries={children} {favicons} empty="empty tag" />
   {:else}
-    {@const icon = favicons[hostOf(entry.copy.url)]}
+    {@const icon = faviconFor(favicons, entry.copy.url)}
     <div class="pad scroll item">
       <div class="title">
         {#if icon}<img class="favicon" src={icon} alt="" />{/if}

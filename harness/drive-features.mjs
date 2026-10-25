@@ -1,7 +1,8 @@
 // Checks: normalize prompt, yazi-style find, help pane, two-line delete confirm, s/S + Shift+Enter, form keys, settings errors.
-import puppeteer from 'puppeteer-core';
+import { BASE, TARGET, checker, launch } from './lib.mjs';
 const out = process.argv[2] ?? '.';
-const browser = await puppeteer.launch({ browser: 'firefox', executablePath: '/Applications/Firefox.app/Contents/MacOS/firefox', headless: true });
+const browser = await launch();
+const { check, done } = checker();
 const page = await browser.newPage();
 await page.setViewport({ width: 1180, height: 640 });
 const errors = [];
@@ -18,7 +19,7 @@ const type = async (s) => { await page.keyboard.type(s, { delay: 25 }); await sl
 const text = (sel) => page.$eval(sel, (e) => e.textContent.replace(/\s+/g, ' ').trim()).catch(() => null);
 const rows = () => page.$$eval('.current .row', (rs) => rs.map((r) => r.textContent.replace(/\s+/g, ' ').trim()));
 const shot = (n) => page.screenshot({ path: `${out}/${n}.png` });
-const URL = 'http://localhost:5199/harness/browser.html';
+const URL = BASE + '/browser.html';
 
 // 1. normalize prompt
 await page.goto(URL); await sleep(1200);
@@ -47,6 +48,9 @@ await press('Escape'); console.log('2 after Esc spans:', (await page.$$('.curren
 await press('?'); await sleep(200);
 const st = () => page.$eval('.help .body', (b) => b.scrollTop);
 console.log('3 help open, scrollTop', await st());
+const helpText = await text('.help');
+check(helpText.includes('Sort by ' + (TARGET === 'chrome' ? 'Chrome' : 'Firefox') + ' order'), 'help names the browser in sort labels');
+check(helpText.includes('Go to menu/') === (TARGET !== 'chrome'), 'Go to menu/ is listed only on Firefox');
 await press('j'); await press('j'); console.log('3 after jj', await st());
 await press('J'); console.log('3 after J', await st());
 await press('K'); console.log('3 after K', await st());
@@ -85,18 +89,34 @@ await press('Enter', 'Meta'); await sleep(500);
 console.log('7 after Cmd+Enter form open:', (await page.$('.form')) !== null);
 
 // 8. settings
-await page.goto('http://localhost:5199/harness/options.html'); await sleep(1000);
+await page.goto(BASE + '/options.html'); await sleep(1000);
 console.log('8 bad names:', await text('section:nth-of-type(3)'));
 await page.focus('#key-down'); await sleep(100);
 await shot('24-settings-focus');
-await page.evaluate(() => {
-  browser.commands.update = async () => { throw new Error('Type error for parameter detail'); };
-});
-await page.focus('#cmd-open-browser');
-await page.keyboard.down('Meta'); await page.keyboard.press('a'); await page.keyboard.up('Meta');
-await type('Bogus+Q'); await press('Tab');
-await sleep(4500);
-console.log('8 status after 4.5s:', await text('.status'), '| inline:', await text('.error-line'));
-await shot('25-settings-error');
+check(!(await page.$('#key-goMenu')) === (TARGET === 'chrome'), 'goMenu is configurable only on Firefox');
+if (TARGET === 'chrome') {
+  // Chrome can't change extension shortcuts itself: read-only list + link to its settings page.
+  const shortcuts = await text('section:nth-of-type(1)');
+  console.log('8 shortcuts:', shortcuts);
+  check(shortcuts.includes('chrome://extensions/shortcuts'), 'shortcuts section points to chrome://extensions/shortcuts');
+  check((await page.$('#cmd-open-browser')) === null, 'no editable shortcut inputs on Chrome');
+  await page.$$eval('button', (bs) => bs.find((b) => b.textContent.includes('open shortcut settings')).click());
+  await sleep(200);
+  const calls = await page.evaluate(() => JSON.stringify(window.__calls));
+  console.log('8 calls:', calls);
+  check(calls.includes('chrome://extensions/shortcuts'), 'button opens chrome://extensions/shortcuts');
+  await shot('25-settings-shortcuts');
+} else {
+  await page.evaluate(() => {
+    browser.commands.update = async () => { throw new Error('Type error for parameter detail'); };
+  });
+  await page.focus('#cmd-open-browser');
+  await page.keyboard.down('Meta'); await page.keyboard.press('a'); await page.keyboard.up('Meta');
+  await type('Bogus+Q'); await press('Tab');
+  await sleep(4500);
+  console.log('8 status after 4.5s:', await text('.status'), '| inline:', await text('.error-line'));
+  await shot('25-settings-error');
+}
 console.log('ERRORS:', errors);
+done(errors);
 await browser.close();

@@ -1,9 +1,11 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { createStore, DEFAULT_SETTINGS, loadSettings, saveSettings, type Settings } from '../../adapter/browser';
-  import { ACTIONS, DEFAULT_BINDINGS, eventToKey, type Action } from '../../core/keymap';
+  import { ACTIONS, DEFAULT_BINDINGS, describeAction, eventToKey, type Action } from '../../core/keymap';
   import { normalizeName, plural } from '../../core/store';
   import { formatPath } from '../../core/tags';
+  import { platform } from '../../platform';
+  import { ext } from '../../platform/ext';
   import ThemeEditor from './ThemeEditor.svelte';
 
   const isMac = navigator.platform.toLowerCase().includes('mac');
@@ -19,12 +21,13 @@
   let badTags = $state<{ path: string; name: string }[]>([]);
   let statusTimer: ReturnType<typeof setTimeout> | undefined;
 
-  const actions = Object.keys(ACTIONS) as Action[];
+  const actions = (Object.keys(ACTIONS) as Action[]).filter((a) => !platform.hiddenActions.includes(a));
+  const describe = (a: Action) => describeAction(a, platform.browserName);
   const bound = (a: Action) => settings.bindings[a] ?? DEFAULT_BINDINGS[a];
   const shown = $derived(
     actions.filter((a) => {
       const q = filter.toLowerCase();
-      return !q || a.toLowerCase().includes(q) || ACTIONS[a].toLowerCase().includes(q) || bound(a).join(' ').includes(filter);
+      return !q || a.toLowerCase().includes(q) || describe(a).toLowerCase().includes(q) || bound(a).join(' ').includes(filter);
     }),
   );
   const conflicts = $derived.by(() => {
@@ -40,7 +43,7 @@
 
   onMount(async () => {
     settings = await loadSettings();
-    commands = await browser.commands.getAll();
+    commands = await ext.commands.getAll();
     await loadBadTags();
   });
 
@@ -57,7 +60,7 @@
     if (keys.join(' ') === DEFAULT_BINDINGS[a].join(' ')) delete bindings[a];
     else bindings[a] = keys;
     settings = await saveSettings({ bindings });
-    flash(`saved: ${ACTIONS[a]}`);
+    flash(`saved: ${describe(a)}`);
   }
 
   async function resetAll() {
@@ -129,9 +132,9 @@
 
   async function setCommand(name: string, shortcut: string) {
     try {
-      if (shortcut.trim()) await browser.commands.update({ name, shortcut: shortcut.trim() });
-      else await browser.commands.reset(name);
-      commands = await browser.commands.getAll();
+      if (shortcut.trim()) await ext.commands.update({ name, shortcut: shortcut.trim() });
+      else await ext.commands.reset(name);
+      commands = await ext.commands.getAll();
       delete cmdErrors[name];
       flash(`shortcut saved: ${shortcut.trim() || 'default'}`);
     } catch (e) {
@@ -164,32 +167,50 @@
 
   <section class="box">
     <span class="box-title">global shortcuts</span>
-    <p class="dim">
-      Press <i>record</i> and then the key combination, or type it in Firefox syntax ({isMac
-        ? 'MacCtrl+Shift+M, Command+Alt+K'
-        : 'Ctrl+Shift+M, Alt+Shift+K'}). Empty resets to the default. Also editable at about:addons → ⚙ → Manage
-      Extension Shortcuts.
-    </p>
-    {#each commands as c (c.name)}
-      <div class="row">
-        <label class="desc" for="cmd-{c.name}">{c.description}</label>
-        <input
-          id="cmd-{c.name}"
-          class="key"
-          value={c.shortcut ?? ''}
-          spellcheck="false"
-          onchange={(e) => setCommand(c.name!, e.currentTarget.value)}
-        />
-        <button
-          class:rec={recordingCmd === c.name}
-          onclick={() => (recordingCmd = recordingCmd === c.name ? null : c.name!)}
-          onkeydown={(e) => onRecordCommand(e, c.name!)}
-        >
-          {recordingCmd === c.name ? 'press keys…' : 'record'}
-        </button>
-        {#if cmdErrors[c.name!]}<span class="error-line">{cmdErrors[c.name!]}</span>{/if}
+    {#if platform.shortcuts.editable}
+      <p class="dim">
+        Press <i>record</i> and then the key combination, or type it in Firefox syntax ({isMac
+          ? 'MacCtrl+Shift+M, Command+Alt+K'
+          : 'Ctrl+Shift+M, Alt+Shift+K'}). Empty resets to the default. Also editable at about:addons → ⚙ → Manage
+        Extension Shortcuts.
+      </p>
+      {#each commands as c (c.name)}
+        <div class="row">
+          <label class="desc" for="cmd-{c.name}">{c.description}</label>
+          <input
+            id="cmd-{c.name}"
+            class="key"
+            value={c.shortcut ?? ''}
+            spellcheck="false"
+            onchange={(e) => setCommand(c.name!, e.currentTarget.value)}
+          />
+          <button
+            class:rec={recordingCmd === c.name}
+            onclick={() => (recordingCmd = recordingCmd === c.name ? null : c.name!)}
+            onkeydown={(e) => onRecordCommand(e, c.name!)}
+          >
+            {recordingCmd === c.name ? 'press keys…' : 'record'}
+          </button>
+          {#if cmdErrors[c.name!]}<span class="error-line">{cmdErrors[c.name!]}</span>{/if}
+        </div>
+      {/each}
+    {:else}
+      {@const settingsUrl = platform.shortcuts.settingsUrl}
+      <p class="dim">
+        {platform.browserName} doesn't let extensions change their own shortcuts. Set them at
+        <code>{settingsUrl}</code>.
+      </p>
+      <!-- Chrome also lists the unnamed toolbar-button command (_execute_action) -->
+      {#each commands.filter((c) => c.description) as c (c.name)}
+        <div class="row">
+          <span class="desc">{c.description}</span>
+          <span class="key">{c.shortcut || 'not set'}</span>
+        </div>
+      {/each}
+      <div class="toolbar">
+        <button onclick={() => ext.tabs.create({ url: settingsUrl })}>open shortcut settings</button>
       </div>
-    {/each}
+    {/if}
   </section>
 
   <section class="box">
@@ -207,7 +228,7 @@
       {#each shown as a (a)}
         {@const keys = bound(a)}
         <div class="row" class:custom={!!settings.bindings[a]}>
-          <label class="desc" for="key-{a}">{ACTIONS[a]}</label>
+          <label class="desc" for="key-{a}">{describe(a)}</label>
           <input
             id="key-{a}"
             class="key"

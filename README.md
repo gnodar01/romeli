@@ -1,16 +1,17 @@
 # romeli
 
-A keyboard-driven Firefox extension that manages your **native Firefox bookmarks** as
+A keyboard-driven Firefox and Chrome extension that manages your **native browser bookmarks** as
 [geekmarks-style hierarchical tags](https://dmitryfrank.com/projects/geekmarks/article), with a
 [yazi](https://yazi-rs.github.io/)-like Miller-column interface in the [Dracula](https://draculatheme.com) palette (fully themeable).
-No server: Firefox's bookmark tree is the source of truth and Firefox Sync carries it everywhere.
+No server: the browser's bookmark tree is the source of truth and its sync (Firefox Sync, Chrome sync) carries
+it everywhere. (Firefox and Chrome don't share bookmarks with each other.)
 
 ## How tags map onto bookmarks
 
 | Concept | Firefox representation |
 |---|---|
 | Hierarchical tag `linux/terminal/` | Folder `Other Bookmarks/linux/terminal` (created on demand, `mkdir -p`) |
-| `toolbar/`, `menu/` | The Bookmarks Toolbar / Bookmarks Menu roots |
+| `toolbar/`, `menu/` | The Bookmarks Toolbar / Bookmarks Menu roots (Chrome: the Bookmarks bar; there is no `menu/`) |
 | Item with tags `linux/terminal/, tool/CLI/` | One bookmark **copy** per tag, all sharing the URL |
 | Primary tag (first in list) | The oldest copy — i.e. the item's "real" location |
 | Untagged item | Bookmark directly in *Other Bookmarks* (`/`) |
@@ -31,8 +32,9 @@ No server: Firefox's bookmark tree is the source of truth and Firefox Sync carri
 | `Ctrl+Shift+M` (macOS) · `Alt+Shift+M` | Open the browser (also the toolbar button) |
 | `Ctrl+Shift+B` (macOS) · `Alt+Shift+B` | Bookmark the current page (opens edit mode if already bookmarked) |
 
-Firefox picks the macOS or Windows/Linux default automatically on install. Change them in romeli's settings page
-(press *record*, then the combination) or `about:addons → ⚙ → Manage Extension Shortcuts`.
+The browser picks the macOS or Windows/Linux default automatically on install. In Firefox, change them in romeli's
+settings page (press *record*, then the combination) or `about:addons → ⚙ → Manage Extension Shortcuts`. Chrome
+doesn't let extensions change their own shortcuts: use `chrome://extensions/shortcuts` (linked from the settings page).
 
 **Bookmark form** (create/edit): `Enter` / `Shift+Enter` cycle name → url → tags, `⌘Enter` (macOS) or
 `Ctrl+Enter` saves, `Esc` cancels. In the tags field `Tab` accepts a completion, `↑/↓` or `C-n/C-p` cycle,
@@ -45,7 +47,7 @@ Firefox picks the macOS or Windows/Linux default automatically on install. Chang
 | `h j k l`, arrows | parent / down / up / enter tag or open item |
 | `gg` `G` `C-u` `C-d` `C-b` `C-f` | top / bottom / half page / page |
 | `H` `L` | back / forward in history |
-| `gh` `gb` `gm` | top level / `toolbar/` / `menu/` |
+| `gh` `gb` `gm` | top level / `toolbar/` / `menu/` (Firefox only) |
 | `o` / `Enter` | open in current tab (on a tag: enter) |
 | `O` | open in new tab (on a tag: open all its items) |
 | `Space` `v` `V` `C-a` `C-i` | toggle select / visual / visual-unset / select all / invert |
@@ -60,7 +62,7 @@ Firefox picks the macOS or Windows/Linux default automatically on install. Chang
 | `f` | filter column (fuzzy) |
 | `z` | fuzzy jump to any tag or item |
 | `s` / `S` | search bookmarks (title/url) / tags — `Shift+Enter` opens in a new browser tab / romeli tab |
-| `,a` `,c` `,m` `,n` (+ shift = reverse) `,t` | sort alpha / added / modified / Firefox order, tags-first toggle |
+| `,a` `,c` `,m` `,n` (+ shift = reverse) `,t` | sort alpha / added / modified / native (browser) order, tags-first toggle |
 | `R` | recursive view (include items from subtags) |
 | `t` `1`–`9` `[` `]` `C-c` | tabs |
 | `cc` `cn` `ct` | copy url / name / tag path |
@@ -81,20 +83,35 @@ live to every open romeli window.
 
 ```sh
 npm install
-npm run build        # → dist/
+npm run build        # → dist/firefox and dist/chrome (build:firefox / build:chrome for one)
 npm start            # web-ext run (temporary install in a fresh Firefox profile)
-npm test             # vitest: tag semantics, ordering, ops + undo, fuzzy/completion
+npm test             # vitest: tag semantics on Firefox- and Chrome-shaped trees, ordering, ops + undo, fuzzy/completion
 npm run check        # svelte-check (TypeScript)
-npm run package      # zip into artifacts/
+npm run package      # Firefox zip into artifacts/
+npm run package:chrome  # Chrome Web Store zip into artifacts/
+npm run verify       # everything below, for both browsers
 ```
 
-Source layout: `src/core` holds all semantics (pure, tested against an in-memory bookmarks mock in `tests/mock.ts`),
-`src/adapter` wraps the WebExtension APIs, `src/ui` is Svelte (browser, create popup, options),
-`src/background` handles commands, windows and favicon capture.
+**Chrome**: load `dist/chrome` via `chrome://extensions` → Developer mode → *Load unpacked*. Requires Chrome 134+.
+Signed in to Chrome without full sync, romeli manages the bookmarks stored in your Google account (the
+`syncing` set) rather than the local-only ones. Managed (enterprise) bookmarks are ignored.
+
+**Chrome Web Store checklist**: `npm run package:chrome` and upload the zip; listing text and screenshots; privacy
+tab: no data collected, permission justifications for `bookmarks` (the extension's purpose), `storage` (settings,
+tag order), `activeTab` (read the current page's URL/title when you bookmark it), `favicon` (show site icons),
+`clipboardWrite` (copy URL/title/path).
+
+Source layout: `src/core` holds all semantics (pure, browser-agnostic, tested against an in-memory bookmarks mock
+in `tests/mock.ts` that imitates both browsers' trees), `src/platform` holds everything that differs between
+Firefox and Chrome (root folders, favicons, shortcuts, manifests), `src/adapter` wraps the WebExtension APIs,
+`src/ui` is Svelte (browser, create popup, options), `src/background` handles commands and windows.
 
 **UI harness**: `npm run harness` serves the real UI at `http://localhost:5199/harness/{browser,create,options}.html`
-with a mocked `browser` API and a seeded tree; with it running, `npm run e2e` drives the UI in headless Firefox
-via puppeteer (`harness/drive*.mjs`, screenshots go to `/tmp`).
+with a mocked `browser` API and a seeded tree (`npm run harness:chrome`: Chrome-shaped, on port 5198).
+`npm run e2e [outdir]` drives both in headless Firefox / Chrome for Testing via puppeteer (`harness/drive*.mjs`),
+starting the harness servers if needed. `npm run e2e:chrome-real` loads `dist/chrome` into Chrome for Testing and
+drives the real extension on real bookmarks (`harness/real-chrome.mjs`); install the browser once with
+`npx @puppeteer/browsers install chrome@stable`.
 
 ## Notes
 
@@ -102,6 +119,8 @@ via puppeteer (`harness/drive*.mjs`, screenshots go to `/tmp`).
   (`,` → `;`, `/` → `|`, undoable with `u`); answering no is remembered (synced), and the settings page has
   a *normalize* button and the "ask on launch" toggle. Bookmark titles are never touched — only folder names
   are parsed as tags.
-* Favicons are captured from your tabs (when you bookmark or visit a bookmarked page); nothing is fetched.
+* Favicons: Firefox doesn't expose its icon cache, so romeli captures them from your tabs (when you bookmark or
+  visit a bookmarked page). Chrome serves its cached icons directly. Nothing is fetched from the network.
 * On Linux/Windows `Ctrl+W` is reserved by Firefox and closes the window; use `Ctrl+Backspace` in the tag field there.
 * A top-level folder literally named `toolbar`/`menu`/`mobile` in Other Bookmarks is shown as `toolbar~/` etc.
+  (On Chrome only `toolbar` and `mobile` are reserved.)

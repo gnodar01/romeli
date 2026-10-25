@@ -1,12 +1,9 @@
 // Usage: node harness/drive.mjs <outdir>  (requires `npx vite --config harness/vite.config.ts`)
-import puppeteer from 'puppeteer-core';
+import { BASE, checker, launch } from './lib.mjs';
 
 const out = process.argv[2] ?? '.';
-const browser = await puppeteer.launch({
-  browser: 'firefox',
-  executablePath: process.env.FIREFOX ?? '/Applications/Firefox.app/Contents/MacOS/firefox',
-  headless: true,
-});
+const browser = await launch();
+const { done } = checker();
 const page = await browser.newPage();
 await page.setViewport({ width: 1180, height: 640 });
 const errors = [];
@@ -36,7 +33,7 @@ const text = (sel) => page.$eval(sel, (e) => e.textContent.replace(/\s+/g, ' ').
 const state = () => page.evaluate(() => JSON.stringify(window.__api.dump()));
 const log = (...a) => console.log(...a);
 
-await page.goto('http://localhost:5199/harness/browser.html');
+await page.goto(BASE + '/browser.html');
 await sleep(1200);
 await keys('n'); // decline the folder-name normalization prompt
 await shot('01-root');
@@ -186,4 +183,5 @@ log('undo tag delete exact:', (await state()) === beforeDel);
 await shot('09-final');
 
 log('ERRORS:', errors);
+done(errors);
 await browser.close();

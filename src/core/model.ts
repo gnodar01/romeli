@@ -1,5 +1,5 @@
 import { pathKey } from './tags';
-import { ROOT_IDS, SPECIAL_TAGS, type BNode, type TagPath } from './types';
+import { EMPTY_LAYOUT, type BNode, type RootLayout, type TagPath } from './types';
 
 export interface TagNode {
   id: string;
@@ -13,7 +13,7 @@ export interface TagNode {
   dateModified: number;
   tags: TagNode[];
   copies: Copy[];
-  /** Special Firefox roots (toolbar/, menu/, mobile/) and the virtual root cannot be renamed/moved/deleted. */
+  /** Special browser roots (toolbar/, menu/, mobile/) and the virtual root cannot be renamed/moved/deleted. */
   fixed: boolean;
 }
 
@@ -58,17 +58,14 @@ export class Model {
   copiesById = new Map<string, Copy>();
   items = new Map<string, Item>();
 
-  constructor(tree: BNode[], overrides: Overrides = new Map()) {
-    const top = tree[0]?.id === ROOT_IDS.root ? tree[0] : { id: ROOT_IDS.root, title: '', children: tree };
-    const byId = new Map((top.children ?? []).map((c) => [c.id, c]));
-    const unfiled = byId.get(ROOT_IDS.unfiled) ?? { id: ROOT_IDS.unfiled, title: '', children: [] };
+  /** Top-level names taken by special tags. */
+  private reserved: Set<string>;
 
-    this.root = this.makeTag(unfiled, '', [], null, true);
-    this.fill(this.root, unfiled, true);
-    for (const [name, id] of Object.entries(SPECIAL_TAGS)) {
-      const node = byId.get(id);
-      if (!node) continue;
-      if (id === ROOT_IDS.mobile && !node.children?.length) continue;
+  constructor(layout: RootLayout = EMPTY_LAYOUT, overrides: Overrides = new Map()) {
+    this.reserved = new Set(layout.reserved);
+    this.root = this.makeTag(layout.other, '', [], null, true);
+    this.fill(this.root, layout.other, true);
+    for (const { name, node } of layout.specials) {
       const tag = this.makeTag(node, name, [name], this.root, true);
       tag.index = -1; // special roots sort before regular tags in native order
       this.root.tags.push(tag);
@@ -123,7 +120,7 @@ export class Model {
         this.copiesById.set(copy.id, copy);
       } else {
         // A top-level folder shadowed by a special tag name is still reachable, just renamed in display.
-        const name = isRoot && child.title in SPECIAL_TAGS ? `${child.title}~` : child.title;
+        const name = isRoot && this.reserved.has(child.title) ? `${child.title}~` : child.title;
         const sub = this.makeTag(child, name, [...tag.path, name], tag, false);
         tag.tags.push(sub);
         this.fill(sub, child, false);

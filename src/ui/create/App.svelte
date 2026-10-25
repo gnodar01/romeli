@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { createStore, hostOf, loadFavicons } from '../../adapter/browser';
+  import { createStore, faviconFor, loadFavicons } from '../../adapter/browser';
   import type { Model } from '../../core/model';
   import { formatTagList } from '../../core/tags';
   import type { TagPath } from '../../core/types';
@@ -24,7 +24,7 @@
       title = item.title;
       tags = formatTagList(item.tags.filter((t) => t.length));
     }
-    favicon = (await loadFavicons())[hostOf(url)];
+    favicon = faviconFor(await loadFavicons(), url);
     model = m;
   });
 

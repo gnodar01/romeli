@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { ACTIONS, ACTION_GROUPS, type Bindings } from '../../core/keymap';
+  import { ACTION_GROUPS, describeAction, type Bindings } from '../../core/keymap';
+  import { platform } from '../../platform';
 
   let { bindings, onClose }: { bindings: Bindings; onClose: () => void } = $props();
 
@@ -65,12 +66,12 @@
       {#each ACTION_GROUPS as [group, actions]}
         <section>
           <div class="group">{group}</div>
-          {#each actions as a}
+          {#each actions.filter((a) => !platform.hiddenActions.includes(a)) as a}
             <div class="row">
               <span class="keys">
                 {#each bindings[a] as k}<span class="k">{k}</span>{:else}<span class="dim">—</span>{/each}
               </span>
-              <span class="desc">{ACTIONS[a]}</span>
+              <span class="desc">{describeAction(a, platform.browserName)}</span>
             </div>
           {/each}
         </section>

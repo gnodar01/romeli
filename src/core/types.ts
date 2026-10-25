@@ -1,11 +1,16 @@
-/** Minimal shape of a Firefox bookmark node that romeli relies on. */
+/** Minimal shape of a native bookmark node (Firefox or Chrome) that romeli relies on. */
 export interface BNode {
   id: string;
   parentId?: string;
   index?: number;
   title: string;
   url?: string;
+  /** Firefox only. */
   type?: 'bookmark' | 'folder' | 'separator';
+  /** Chrome only (134+): which permanent folder this is. */
+  folderType?: 'bookmarks-bar' | 'other' | 'mobile' | 'managed';
+  /** Chrome only (134+): whether the node is stored in the user's account (synced). */
+  syncing?: boolean;
   dateAdded?: number;
   dateGroupModified?: number;
   children?: BNode[];
@@ -31,17 +36,16 @@ export interface KVStore {
 /** A hierarchical tag path, e.g. ['linux', 'terminal']. The root (untagged) is []. */
 export type TagPath = string[];
 
-export const ROOT_IDS = {
-  root: 'root________',
-  menu: 'menu________',
-  toolbar: 'toolbar_____',
-  unfiled: 'unfiled_____',
-  mobile: 'mobile______',
-} as const;
+/** Where tags live in the native tree. Resolved by the platform shell (see src/platform). */
+export interface RootLayout {
+  /** The folder whose subfolders are the top-level tags and whose bookmarks are untagged. */
+  other: BNode;
+  /** Special top-level tags mapped onto the browser's other root folders, in display order. */
+  specials: { name: string; node: BNode }[];
+  /** Top-level names taken by special tags; a user folder with one is shown with a `~` suffix. */
+  reserved: string[];
+}
 
-/** Top-level tag names that map onto Firefox's special root folders. */
-export const SPECIAL_TAGS: Record<string, string> = {
-  toolbar: ROOT_IDS.toolbar,
-  menu: ROOT_IDS.menu,
-  mobile: ROOT_IDS.mobile,
-};
+export type RootResolver = (tree: BNode[]) => RootLayout;
+
+export const EMPTY_LAYOUT: RootLayout = { other: { id: '', title: '', children: [] }, specials: [], reserved: [] };

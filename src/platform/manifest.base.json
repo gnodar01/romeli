@@ -1,0 +1,17 @@
+{
+  "manifest_version": 3,
+  "name": "romeli",
+  "description": "Keyboard-driven hierarchical-tag bookmark manager with a yazi-like interface.",
+  "action": { "default_title": "romeli" },
+  "options_ui": { "page": "ui/options/index.html", "open_in_tab": true },
+  "commands": {
+    "open-browser": {
+      "suggested_key": { "default": "Alt+Shift+M", "mac": "MacCtrl+Shift+M" },
+      "description": "Open the romeli bookmark browser"
+    },
+    "create-bookmark": {
+      "suggested_key": { "default": "Alt+Shift+B", "mac": "MacCtrl+Shift+B" },
+      "description": "Bookmark the current page with romeli"
+    }
+  }
+}

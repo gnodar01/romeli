@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { Favicons } from '../../adapter/browser';
-  import { hostOf } from '../../adapter/browser';
+  import { faviconFor } from '../../adapter/browser';
   import { findPositions, type Entry } from '../browser/view';
   import Highlight from './Highlight.svelte';
 
@@ -42,7 +42,7 @@
         <span class="name"><Highlight text={e.name} positions={e.positions} found={findPositions(find, e.name)} />/</span>
         <span class="info">{e.tag.tags.length + e.tag.copies.length}</span>
       {:else}
-        {@const icon = favicons[hostOf(e.copy.url)]}
+        {@const icon = faviconFor(favicons, e.copy.url)}
         <span class="icon">{#if icon}<img class="favicon" src={icon} alt="" />{:else}·{/if}</span>
         <span class="name">
           {#if e.rel}<span class="rel">{e.rel}</span>{/if}<Highlight
