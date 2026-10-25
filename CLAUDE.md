@@ -141,11 +141,30 @@ ImageMagick: `compare -metric AE before.png after.png /dev/null` prints 0 when t
 - **Harness flakiness:** the first harness run after editing source files can log `error loading dynamically imported module` (vite re-optimizing). Re-run before treating it as a bug.
 - **Puppeteer in Firefox:** triple-click doesn't select an input's text. To replace a value, use `el.focus(); el.select()`, press Backspace, then type (see `setInput` in `harness/drive-theme.mjs`).
 
+## Releasing
+
+1. `npm run verify` must pass (unit tests, svelte-check, both builds, dist checks, web-ext lint, both harnesses, real Chrome).
+2. `npm run bump [-- patch|minor|major|x.y.z]` bumps `package.json`; the build stamps the version into both manifests.
+3. Firefox: `npm run sign` produces a signed, unlisted `.xpi` in `artifacts/` (AMO API keys in `.env`). Installing it
+   from the file works in any Firefox; there is no `update_url`, so testers must install each new version by hand.
+4. Chrome: `npm run package:chrome` produces `artifacts/romeli-chrome-<version>.zip`. Testers either unzip it and use
+   `chrome://extensions` → Developer mode → *Load unpacked* (no auto-update; reload after replacing the folder), or
+   install from a Chrome Web Store listing (unlisted is fine for testers). The store checklist is in the README.
+   Don't put a `key` in the Chrome manifest: the store rejects it.
+
 ## State of the project
 
-v1, the first round of feedback, and the customizable theme are implemented and verified through the harness. The Chrome
-port is verified through both harnesses and as a real extension in Chrome for Testing (bookmark ops, undo, popups,
-`_favicon`, options). Never verified by an agent: the installed Firefox extension on real bookmarks; Chrome's account
-(`syncing`) bookmarks on a signed-in profile; real keyboard commands (and so `activeTab` on create-bookmark); the theme's
-color pickers, the JSON copy button, and native controls actually rendering light or dark. Check `git log` for
-history; the user commits their own work.
+- v1, the first round of feedback, and the customizable theme are implemented and verified through the harness.
+- Chrome port (2026-10-25): core is browser-agnostic, and everything browser-specific is in `src/platform/`.
+  - Verified by an agent through both harnesses and as a real extension in Chrome for Testing: bookmark ops, undo,
+    popups, `_favicon`, options, and a 150-item batch under the `storage.sync` write quota.
+  - The user then QA'd it by hand in real Chrome (`npm run start:chrome`) and reported everything working.
+- Never verified by an agent:
+  - the installed Firefox extension on real bookmarks;
+  - Chrome's account (`syncing`) bookmarks on a signed-in profile;
+  - real keyboard commands (and so `activeTab` on create-bookmark);
+  - the theme's color pickers, the JSON copy button, and native controls actually rendering light or dark.
+- `npm run start:chrome` shows an "unsupported command-line flag: --disable-blink-features=AutomationControlled" bar.
+  It's added by web-ext and harmless. Passing `--args=--enable-blink-features=AutomationControlled` hides it, but then
+  sites see `navigator.webdriver` and Google sign-in may refuse, so it's deliberately left alone.
+- Check `git log` for history; the user commits their own work.
