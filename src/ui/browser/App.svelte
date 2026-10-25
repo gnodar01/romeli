@@ -953,8 +953,14 @@
     display: flex;
     justify-content: space-between;
     padding: 0 8px;
+    gap: 16px;
     white-space: nowrap;
     overflow: hidden;
+  }
+  .path {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
   .root {
     color: var(--path-root);
@@ -971,6 +977,7 @@
   }
   .tabs {
     display: flex;
+    flex-shrink: 0;
     gap: 2px;
   }
   .tab {

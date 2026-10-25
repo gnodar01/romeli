@@ -3,7 +3,7 @@ import { BASE, checker, launch } from './lib.mjs';
 
 const out = process.argv[2] ?? '.';
 const browser = await launch();
-const { done } = checker();
+const { check, done } = checker();
 const page = await browser.newPage();
 await page.setViewport({ width: 1180, height: 640 });
 const errors = [];
@@ -167,6 +167,19 @@ await keys('g', 'h');
 log('tabs:', await text('.tabs'));
 await keys('1');
 log('tab1 header:', await text('header'));
+// a path too long for the header truncates instead of pushing the tabs out of view
+await page.setViewport({ width: 260, height: 640 });
+await sleep(200);
+const fit = await page.evaluate(() => {
+  const h = document.querySelector('header').getBoundingClientRect();
+  const t = document.querySelector('.tabs').getBoundingClientRect();
+  const p = document.querySelector('header .path');
+  return { tabsInside: t.right <= h.right && t.left >= h.left, pathOverflows: p.scrollWidth > p.clientWidth };
+});
+check(fit.pathOverflows && fit.tabsInside, `long path keeps tabs in view: ${JSON.stringify(fit)}`);
+await shot('08b-narrow-header');
+await page.setViewport({ width: 1180, height: 640 });
+await sleep(200);
 
 // delete a tag with confirm y, then undo
 await keys('g', 'h', '/');
