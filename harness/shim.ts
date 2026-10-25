@@ -38,7 +38,9 @@ api.seed({
 await api.create({ parentId: [...api.nodes.values()].find((n) => n.title === 'terminal')!.id, title: 'yazi', url: 'https://yazi-rs.github.io' });
 
 const onCreated = event(), onRemoved = event(), onChanged = event(), onMoved = event(), storageChanged = event();
-const onChildrenReordered = event(), onImportEnded = event();
+const onChildrenReordered = event(), onImportEnded = event(), onMessage = event();
+/** Lets drive scripts send a runtime message, as the background does. */
+(globalThis as any).__message = (msg: unknown) => onMessage.fire(msg);
 const wrap = <A extends unknown[], R>(f: (...a: A) => Promise<R>, ev: { fire: Listener }) =>
   async (...a: A) => {
     const r = await f(...a);
@@ -104,7 +106,7 @@ const ext = {
   commands: isChrome
     ? { getAll: async () => commands }
     : { getAll: async () => commands, update: async () => {}, reset: async () => {} },
-  runtime: { getURL: (p: string) => (p.startsWith('/_favicon/') ? fakeFavicon(p) : '/' + p) },
+  runtime: { getURL: (p: string) => (p.startsWith('/_favicon/') ? fakeFavicon(p) : '/' + p), onMessage },
 };
 if (isChrome) Object.assign(ext.bookmarks, { onChildrenReordered, onImportEnded });
 (globalThis as any)[isChrome ? 'chrome' : 'browser'] = ext;

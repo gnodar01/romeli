@@ -9,15 +9,18 @@ const SIZES: Record<Kind, { width: number; height: number }> = {
   create: { width: 680, height: 420 },
 };
 
-/** Open (or focus) romeli's popup window. The create window is always reopened with fresh params. */
-async function openWindow(kind: Kind, query = '') {
+/**
+ * Open (or focus) romeli's popup window. The create window is always reopened with fresh params.
+ * Resolves to true when an already open browser window was focused instead.
+ */
+async function openWindow(kind: Kind, query = ''): Promise<boolean> {
   const key = `win.${kind}`;
   const id = (await ext.storage.session.get(key))[key] as number | undefined;
   if (id !== undefined) {
     try {
       if (kind === 'browser') {
         await ext.windows.update(id, { focused: true });
-        return;
+        return true;
       }
       await ext.windows.remove(id);
     } catch {
@@ -44,6 +47,14 @@ async function openWindow(kind: Kind, query = '') {
     ...pos,
   });
   await ext.storage.session.set({ [key]: win.id });
+  return false;
+}
+
+/** Open (or focus) the browser window, revealing the current tab's page there if it's bookmarked. */
+async function openBrowser() {
+  const url = (await activeNormalTab().catch(() => undefined))?.url;
+  const focused = await openWindow('browser', url ? `?${new URLSearchParams({ reveal: url })}` : '');
+  if (focused && url) await ext.runtime.sendMessage({ type: 'reveal', url }).catch(() => {});
 }
 
 async function createBookmark() {
@@ -56,11 +67,11 @@ async function createBookmark() {
 }
 
 ext.commands.onCommand.addListener((command) => {
-  if (command === 'open-browser') void openWindow('browser');
+  if (command === 'open-browser') void openBrowser();
   if (command === 'create-bookmark') void createBookmark();
 });
 
-ext.action.onClicked.addListener(() => void openWindow('browser'));
+ext.action.onClicked.addListener(() => void openBrowser());
 
 ext.windows.onRemoved.addListener(async (id) => {
   const all = await ext.storage.session.get(null);

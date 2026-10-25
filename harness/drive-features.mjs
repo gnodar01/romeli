@@ -88,6 +88,21 @@ console.log('7 form still open:', (await page.$('.form')) !== null);
 await press('Enter', 'Meta'); await sleep(500);
 console.log('7 after Cmd+Enter form open:', (await page.$('.form')) !== null);
 
+// 7b. reveal: the shortcut opens romeli at the current tab's primary tag, or moves an open window there
+const header = () => text('header');
+const hoveredRow = () => page.$eval('.current .row.cursor', (r) => r.textContent.replace(/\s+/g, ' ').trim()).catch(() => null);
+await page.goto(URL + '?reveal=' + encodeURIComponent('https://yazi-rs.github.io')); await sleep(1200);
+await press('n'); // decline normalization
+console.log('7b reveal on open:', await header(), '|', await hoveredRow());
+check((await header()).includes('tool/CLI/'), 'reveal on open goes to the primary tag');
+check((await hoveredRow())?.includes('yazi'), 'reveal on open puts the cursor on the item');
+await page.evaluate(() => window.__message({ type: 'reveal', url: 'https://sw.kovidgoyal.net/kitty/' })); await sleep(300);
+console.log('7b reveal message:', await header(), '|', await hoveredRow());
+check((await header()).includes('linux/terminal/') && (await hoveredRow())?.includes('kitty'), 'reveal message moves an open window');
+await page.evaluate(() => window.__message({ type: 'reveal', url: 'https://not-bookmarked.example' })); await sleep(300);
+check((await header()).includes('linux/terminal/'), 'revealing an unbookmarked page stays put');
+await shot('23b-reveal');
+
 // 8. settings
 await page.goto(BASE + '/options.html'); await sleep(1000);
 console.log('8 bad names:', await text('section:nth-of-type(3)'));

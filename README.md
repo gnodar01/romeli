@@ -29,7 +29,7 @@ it everywhere. (Firefox and Chrome don't share bookmarks with each other.)
 
 | Shortcut | |
 |---|---|
-| `Ctrl+Shift+M` (macOS) · `Alt+Shift+M` | Open the browser (also the toolbar button) |
+| `Ctrl+Shift+M` (macOS) · `Alt+Shift+M` | Open the browser (also the toolbar button); if the current page is bookmarked, jump to its primary tag |
 | `Ctrl+Shift+B` (macOS) · `Alt+Shift+B` | Bookmark the current page (opens edit mode if already bookmarked) |
 
 The browser picks the macOS or Windows/Linux default automatically on install. In Firefox, change them in romeli's

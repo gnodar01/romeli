@@ -147,7 +147,11 @@
     favicons = f;
     const first = !loaded;
     loaded = true;
-    if (first) void offerNormalize();
+    if (first) {
+      const url = new URLSearchParams(location.search).get('reveal');
+      if (url) reveal(url);
+      void offerNormalize();
+    }
   }
 
   /** Once per launch: offer to rename folders whose names contain the tag separators. */
@@ -181,9 +185,15 @@
     const off = onExternalChange(() => void refresh());
     const onLocal = (_: unknown, area: string) => area === 'local' && loadFavicons().then((f) => (favicons = f));
     ext.storage.onChanged.addListener(onLocal);
+    // The background asks an already open window to show the page of the current tab.
+    const onMessage = (msg: { type?: string; url?: string }) => {
+      if (msg?.type === 'reveal' && msg.url) reveal(msg.url);
+    };
+    ext.runtime.onMessage.addListener(onMessage);
     return () => {
       off();
       ext.storage.onChanged.removeListener(onLocal);
+      ext.runtime.onMessage.removeListener(onMessage);
     };
   });
 
@@ -250,6 +260,13 @@
     tab.filter = '';
     tab.hover = opts.hover ?? tab.remember[pathKey(path)] ?? null;
     tab.cursor = 0;
+  }
+
+  /** If `url` is bookmarked, go to its primary tag with the cursor on it. */
+  function reveal(url: string) {
+    const path = model.item(url)?.tags[0];
+    if (!path) return;
+    go(path, { hover: itemKey(url, path), record: !samePath(path, tab.path) });
   }
 
   const pageRows = () => Math.max(1, Math.floor((window.innerHeight - 60) / 20));
