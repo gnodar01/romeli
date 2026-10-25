@@ -48,6 +48,9 @@ export class Store {
   model: Model = new Model();
   overrides: Overrides = new Map();
   private orders: OrderStore;
+  /** Nesting depth of `batched` calls, and whether overrides changed inside them. */
+  private batchDepth = 0;
+  private ordersDirty = false;
 
   constructor(
     private api: BookmarksApi,
@@ -100,6 +103,10 @@ export class Store {
    * An empty list deletes the item.
    */
   async setItemTags(url: string, title: string, tags: TagPath[], indexes: Record<string, number> = {}) {
+    return this.batched(() => this.reconcile(url, title, tags, indexes));
+  }
+
+  private async reconcile(url: string, title: string, tags: TagPath[], indexes: Record<string, number>) {
     await this.reload();
     const want = normalizeTags(tags);
     const existing = this.model.item(url)?.copies ?? [];
@@ -143,13 +150,37 @@ export class Store {
     }
   }
 
+  /** Persist the overrides, or, inside `batched`, mark them for one write when the batch ends. */
   private async saveOrders() {
-    await this.orders.save(this.overrides);
+    this.ordersDirty = true;
+    if (!this.batchDepth) await this.flushOrders();
     await this.reload();
   }
 
+  private async flushOrders() {
+    if (!this.ordersDirty) return;
+    this.ordersDirty = false;
+    await this.orders.save(this.overrides);
+  }
+
+  /**
+   * Run `fn` with order saves deferred to its end, so an op costs at most one storage.sync write
+   * however many items it touches (Chrome rejects writes beyond 120 per minute). Also flushes when
+   * `fn` throws, so storage keeps matching the overrides of whatever was already changed.
+   */
+  private async batched<T>(fn: () => Promise<T>): Promise<T> {
+    this.batchDepth++;
+    try {
+      return await fn();
+    } finally {
+      if (--this.batchDepth === 0) await this.flushOrders();
+    }
+  }
+
   async restore(snaps: ItemSnapshot[]) {
-    for (const s of snaps) await this.setItemTags(s.url, s.title, s.tags, s.indexes);
+    await this.batched(async () => {
+      for (const s of snaps) await this.setItemTags(s.url, s.title, s.tags, s.indexes);
+    });
   }
 
   /** Run an item-level mutation and build an undo entry from before/after snapshots. */
@@ -157,7 +188,7 @@ export class Store {
     await this.reload();
     const all = [...new Set(urls)];
     const before = all.map((u) => this.snapshot(u));
-    const warnings = await body();
+    const warnings = await this.batched(body);
     await this.reload();
     const after = all.map((u) => this.snapshot(u));
     const entry: UndoEntry = {
@@ -412,18 +443,19 @@ export class Store {
     const tag = this.requireTag(path);
     const folders = this.model.subtree(tag).map((t) => ({ path: t.path, index: t.index }));
     const urls = [...new Set(this.model.subtree(tag).flatMap((t) => t.copies.map((c) => c.url)))];
-    const run = async () => {
-      await this.reload();
-      for (const url of urls) {
-        const item = this.model.item(url);
-        if (!item) continue;
-        const rest = item.tags.filter((t) => !isAncestorOrSelf(path, t));
-        await this.setItemTags(url, item.title, rest.length ? rest : [[]]);
-      }
-      const t = this.model.tag(path);
-      if (t) await this.api.removeTree(t.id);
-      await this.reload();
-    };
+    const run = () =>
+      this.batched(async () => {
+        await this.reload();
+        for (const url of urls) {
+          const item = this.model.item(url);
+          if (!item) continue;
+          const rest = item.tags.filter((t) => !isAncestorOrSelf(path, t));
+          await this.setItemTags(url, item.title, rest.length ? rest : [[]]);
+        }
+        const t = this.model.tag(path);
+        if (t) await this.api.removeTree(t.id);
+        await this.reload();
+      });
     const before = urls.map((u) => this.snapshot(u));
     await run();
     return {

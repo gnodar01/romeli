@@ -159,6 +159,70 @@ check(/Chrome root folder/.test((await text('footer')) ?? ''), 'renaming toolbar
 check(/Chrome root folder/.test((await text('footer')) ?? ''), 'renaming toolbar/ is refused');
 await page.screenshot({ path: `${out}/real-02-after.png` });
 
+// 3b. Batch ops vs Chrome's 120 writes/minute storage.sync quota: 150 items that each have a stored
+// tag order (b before a). Deleting them all, undoing and redoing must not trip the quota.
+const N = 150;
+await worker.evaluate(async (N) => {
+  const b = chrome.bookmarks;
+  const a = await b.create({ parentId: '2', title: 'batch-a' });
+  const bb = await b.create({ parentId: '2', title: 'batch-b' });
+  const entries = [];
+  for (let i = 0; i < N; i++) {
+    const url = `https://batch-${i}.example/`;
+    await b.create({ parentId: a.id, title: `item ${i}`, url });
+    await b.create({ parentId: bb.id, title: `item ${i}`, url });
+    entries.push([url, ['batch-b', 'batch-a']]);
+  }
+  // Same encoding as src/core/order.ts.
+  const json = JSON.stringify(entries);
+  const chunks = {};
+  let n = 0;
+  for (let i = 0; i < json.length; i += 2500) chunks[`order.${n++}`] = json.slice(i, i + 2500);
+  await chrome.storage.sync.set({ ...chunks, 'order.count': n });
+}, N);
+// copies, stored overrides, and how many items have batch-b/ as their effective first tag
+// (override first, else oldest copy; same tie-break as orderCopies in src/core/model.ts).
+const batchState = () =>
+  worker.evaluate(async () => {
+    const hits = (await chrome.bookmarks.search('batch-')).filter((h) => h.url);
+    const { ['order.count']: n = 0, ...rest } = await chrome.storage.sync.get(null);
+    let json = '';
+    for (let i = 0; i < n; i++) json += rest[`order.${i}`];
+    const overrides = new Map(json ? JSON.parse(json).filter(([u]) => u.includes('batch-')) : []);
+    const folders = new Map((await chrome.bookmarks.search('batch-')).filter((h) => !h.url).map((f) => [f.id, f.title]));
+    const byUrl = new Map();
+    for (const h of hits) byUrl.set(h.url, [...(byUrl.get(h.url) ?? []), h]);
+    let bFirst = 0;
+    for (const [url, copies] of byUrl) {
+      const o = overrides.get(url);
+      const oldest = [...copies].sort((x, y) => x.dateAdded - y.dateAdded || (x.id < y.id ? -1 : x.id > y.id ? 1 : 0))[0];
+      if ((o ? o[0] : folders.get(oldest.parentId)) === 'batch-b') bFirst++;
+    }
+    return { copies: hits.length, overrides: overrides.size, bFirst };
+  });
+await page.reload();
+await sleep(1500);
+log('batch seeded:', await batchState());
+check((await batchState()).bFirst === N, 'seeded orders put batch-b/ first');
+await goTo('batch-a');
+await key('l', 'Control+a', 'D');
+await sleep(300);
+await key('y');
+await sleep(3000);
+const footerAfterD = await text('footer');
+log('batch D:', await batchState(), '|', footerAfterD);
+check(!/quota/i.test(footerAfterD ?? ''), 'batch D does not hit the storage.sync quota');
+check(JSON.stringify(await batchState()) === JSON.stringify({ copies: 0, overrides: 0, bFirst: 0 }), `D on ${N} items removes them and their stored orders`);
+await key('u');
+await sleep(4000);
+log('batch undo:', await batchState(), '|', await text('footer'));
+const undone = await batchState();
+check(undone.copies === 2 * N && undone.bFirst === N, 'undo restores every copy, each still with batch-b/ first');
+await key('Control+r');
+await sleep(3000);
+check(JSON.stringify(await batchState()) === JSON.stringify({ copies: 0, overrides: 0, bFirst: 0 }), 'redo removes them again');
+await key('g', 'h');
+
 // 4. Background: open-browser opens romeli in a single-instance popup window.
 // (Commands can't be pressed from puppeteer, so use the runtime message the background also handles.)
 const popups = () => worker.evaluate(async () => (await chrome.windows.getAll({ windowTypes: ['popup'], populate: true })).map((w) => w.tabs[0]?.url));

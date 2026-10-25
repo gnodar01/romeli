@@ -222,15 +222,26 @@ export interface Spec {
 
 export class MemoryKV implements KVStore {
   data = new Map<string, unknown>();
+  /** set/remove calls so far; each is one write against Chrome's storage.sync quota. */
+  writes = 0;
+  /** Reject writes beyond this many, like Chrome's MAX_WRITE_OPERATIONS_PER_MINUTE (120). */
+  writeLimit = Infinity;
+
+  private write() {
+    if (++this.writes > this.writeLimit) throw new Error('This request exceeds the MAX_WRITE_OPERATIONS_PER_MINUTE quota.');
+  }
+
   async get(keys: string[] | null) {
     const out: Record<string, unknown> = {};
     for (const [k, v] of this.data) if (!keys || keys.includes(k)) out[k] = structuredClone(v);
     return out;
   }
   async set(items: Record<string, unknown>) {
+    this.write();
     for (const [k, v] of Object.entries(items)) this.data.set(k, structuredClone(v));
   }
   async remove(keys: string[]) {
+    this.write();
     keys.forEach((k) => this.data.delete(k));
   }
 }

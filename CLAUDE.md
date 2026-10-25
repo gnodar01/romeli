@@ -42,6 +42,7 @@ ImageMagick: `compare -metric AE before.png after.png /dev/null` prints 0 when t
     - Every op re-reads the tree first, so the native tree wins.
     - Every op returns an `OpResult` whose `UndoEntry` is expressed as URLs and tag paths, because bookmark ids change when bookmarks are recreated.
     - The key primitive is `setItemTags(url, title, tags)`. It reconciles an item's copies to an exact ordered tag list, and moves copies where it can instead of recreating them, so `dateAdded` survives.
+    - Order overrides are saved once per op: `batched()` defers `saveOrders` to the end of the outermost op.
   - `tags.ts`: path helpers and the geekmarks redundancy rules (`addTag`, `replaceTag`, `normalizeTags`).
   - `order.ts`: tag-order overrides stored in `storage.sync`, split into chunks of 2500 chars or fewer to stay under the per-item quota.
   - `complete.ts`: completion for the tag-list input. `fuzzy.ts`: an fzf-like matcher.
@@ -120,8 +121,11 @@ ImageMagick: `compare -metric AE before.png after.png /dev/null` prints 0 when t
     and links to `chrome://extensions/shortcuts`. `commands.getAll()` also returns `_execute_action` (no description).
   - Chrome uses `activeTab` instead of `tabs` (no install warning), so it only sees the active tab's URL/title
     when a command or the toolbar button fires. Favicons come from `/_favicon/?pageUrl=…` (`favicon` permission).
-  - Chrome's `storage.sync` allows 120 writes/minute (Firefox has no such limit). Each user action writes once
-    or twice, which is fine; don't add per-keystroke sync writes.
+  - Chrome's `storage.sync` allows 120 writes/minute (Firefox has no such limit); writes beyond it fail. Store ops
+    run inside `Store.batched`, which defers order saves to one write at the end of the op (also on failure), and
+    `OrderStore.save` writes only changed chunks. A new op that loops over items must stay inside `itemOp`/`batched`;
+    the `storage.sync writes` tests (MemoryKV `writes`/`writeLimit`) and the batch step in `real-chrome.mjs` check it.
+    Don't add per-keystroke sync writes.
   - The background is a service worker on Chrome: no DOM, register every listener at the top level, keep state in
     `storage.session`.
 - **Shell aliases** in this environment: `rm` is interactive and `cp` adds `-r`. Use `/bin/rm -f` and `/bin/cp -R` in scripts, or the command will hang or fail.

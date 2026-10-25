@@ -43,13 +43,17 @@ export class OrderStore {
     return decodeOverrides(await this.kv.get(null));
   }
 
+  /**
+   * Writes only the chunks that differ from what's stored, so saving unchanged overrides costs no
+   * writes (Chrome allows 120 storage.sync writes per minute; reads are free).
+   */
   async save(o: Overrides): Promise<void> {
-    const prev = Number((await this.kv.get([COUNT]))[COUNT] ?? 0);
+    const prev = await this.kv.get(null);
     const next = encodeOverrides(o);
-    const n = next[COUNT] as number;
-    await this.kv.set(next);
+    const changed = Object.fromEntries(Object.entries(next).filter(([k, v]) => prev[k] !== v));
+    if (Object.keys(changed).length) await this.kv.set(changed);
     const stale: string[] = [];
-    for (let i = n; i < prev; i++) stale.push(PREFIX + i);
+    for (let i = next[COUNT] as number; i < Number(prev[COUNT] ?? 0); i++) stale.push(PREFIX + i);
     if (stale.length) await this.kv.remove(stale);
   }
 

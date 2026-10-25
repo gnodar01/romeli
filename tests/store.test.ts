@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { parsePath as P } from '../src/core/tags';
 import { decodeOverrides, encodeOverrides } from '../src/core/order';
-import { FLAVORS, setup as setupFlavor, type Spec } from './mock';
+import { FLAVORS, setup as setupFlavor, type MemoryKV, type Spec } from './mock';
 
 const ARCH = 'https://wiki.archlinux.org';
 
@@ -171,6 +171,69 @@ describe.each(FLAVORS)('%s', (flavor) => {
       expect(store.model.tag(P('x/y/z'))).toBeDefined();
       await entry!.undo();
       expect(store.model.tag(P('x'))).toBeUndefined();
+    });
+  });
+
+  describe('storage.sync writes', () => {
+    /** n items in a/ and b/, each reordered to b-first, so every one has a stored order override. */
+    const withOverrides = async (n: number) => {
+      const env = await setup({ a: {}, b: {} });
+      for (let i = 0; i < n; i++) {
+        const url = `https://${i}.example/`;
+        await env.store.saveItem(null, url, `i${i}`, [P('a'), P('b')]);
+        await env.store.saveItem(url, url, `i${i}`, [P('b'), P('a')]);
+      }
+      expect(env.store.overrides.size).toBe(n);
+      env.kv.writes = 0;
+      env.kv.writeLimit = 120;
+      return { ...env, urls: Array.from({ length: n }, (_, i) => `https://${i}.example/`) };
+    };
+    const stored = (kv: MemoryKV) => decodeOverrides(Object.fromEntries(kv.data));
+
+    it('a batch op over many items writes once, and undo/redo once each', async () => {
+      const { api, kv, store, urls } = await withOverrides(150);
+      const before = api.dump();
+      const { entry } = await store.deleteItems(urls);
+      expect(kv.writes).toBeLessThanOrEqual(2);
+      expect(stored(kv).size).toBe(0);
+      kv.writes = 0;
+      await entry!.undo();
+      expect(kv.writes).toBeLessThanOrEqual(2);
+      expect(api.dump()).toEqual(before);
+      expect(tagsOf(store, urls[42])).toEqual(['b', 'a']);
+      expect(stored(kv)).toEqual(store.overrides);
+      kv.writes = 0;
+      await entry!.redo();
+      expect(kv.writes).toBeLessThanOrEqual(2);
+    });
+
+    it('copy, cut and tag deletion over many items stay within one write', async () => {
+      const { kv, store, urls } = await withOverrides(130);
+      await store.addTag(urls, P('c'));
+      await store.moveCopies(urls.map((url) => ({ url, path: P('c') })), P('d'));
+      await store.deleteTag(P('d'));
+      expect(kv.writes).toBeLessThanOrEqual(6);
+      expect(stored(kv)).toEqual(store.overrides);
+    });
+
+    it('saving unchanged orders writes nothing', async () => {
+      const { kv, store, urls } = await withOverrides(3);
+      await store.saveItem(urls[0], urls[0], 'renamed', [P('b'), P('a')]);
+      expect(kv.writes).toBe(0);
+    });
+
+    it('a batch that fails halfway still stores the orders of what it changed', async () => {
+      const { api, kv, store, urls } = await withOverrides(20);
+      let calls = 0;
+      const remove = api.remove.bind(api);
+      api.remove = async (id) => {
+        if (++calls === 15) throw new Error('boom');
+        return remove(id);
+      };
+      await expect(store.deleteItems(urls)).rejects.toThrow('boom');
+      expect(stored(kv)).toEqual(store.overrides);
+      expect(store.overrides.size).toBeGreaterThan(0);
+      expect(store.overrides.size).toBeLessThan(20);
     });
   });
 
