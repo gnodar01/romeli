@@ -3,6 +3,7 @@
     "gecko": {
       "id": "romeli@gnodar",
       "strict_min_version": "140.0",
+      "update_url": "https://raw.githubusercontent.com/gnodar01/romeli/main/updates.json",
       "data_collection_permissions": { "required": ["none"] }
     }
   },

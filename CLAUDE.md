@@ -12,7 +12,7 @@ npm run build      # vite → dist/firefox and dist/chrome (build:firefox / buil
 npm test           # vitest: tests/*.test.ts (core semantics on every mock flavor; in-memory mock in tests/mock.ts)
 npm run check      # svelte-check (must stay at 0 errors / 0 warnings)
 npm run check:dist # each dist/ has only its own browser's code; manifest files exist
-npm run lint:ext   # web-ext lint dist/firefox; expected: 0 errors, 2 benign warnings (Android min version, Svelte innerHTML)
+npm run lint:ext   # web-ext lint --self-hosted dist/firefox (allows update_url); expected: 0 errors, 2 benign warnings (Android min version, Svelte innerHTML)
 npm start          # web-ext run: temporary install in a fresh Firefox profile (opens a real window)
 npm run start:chrome    # same for Chrome: your installed Chrome, fresh temporary profile (needs build:chrome first)
 npm run harness    # Firefox-shaped mock UI at localhost:5199/harness/{browser,create,options}.html
@@ -147,8 +147,13 @@ ImageMagick: `compare -metric AE before.png after.png /dev/null` prints 0 when t
 
 1. `npm run verify` must pass (unit tests, svelte-check, both builds, dist checks, web-ext lint, both harnesses, real Chrome).
 2. `npm run bump [-- patch|minor|major|x.y.z]` bumps `package.json`; the build stamps the version into both manifests.
-3. Firefox: `npm run sign` produces a signed, unlisted `.xpi` in `artifacts/` (AMO API keys in `.env`). Installing it
-   from the file works in any Firefox; there is no `update_url`, so testers must install each new version by hand.
+3. Firefox: commit and push the bump, then `npm run sign` produces a signed, unlisted `.xpi` in `artifacts/` (AMO API
+   keys in `.env`). `npm run release:firefox [-- --notes "…"]` puts it (and the Chrome zip, if built) on a GitHub Release
+   `v<version>` and adds an entry to `updates.json`; pushing `updates.json` ships it. Installed copies poll it through
+   the manifest's `update_url` (`raw.githubusercontent.com/gnodar01/romeli/main/updates.json`). That URL is permanent:
+   moving the file, renaming the repo or making it private strands every install. `check:dist` and the manifest test
+   enforce the `update_url`. 0.2.0 and older had none, so those testers install the next version by hand once.
+   Maintainer and tester guides are in `tutorials/` (git-ignored).
 4. Chrome: `npm run package:chrome` produces `artifacts/romeli-chrome-<version>.zip`. Testers either unzip it and use
    `chrome://extensions` → Developer mode → *Load unpacked* (no auto-update; reload after replacing the folder), or
    install from a Chrome Web Store listing (unlisted is fine for testers). The store checklist is in the README.

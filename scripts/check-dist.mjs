@@ -37,6 +37,10 @@ for (const [target, needles] of Object.entries(FORBIDDEN)) {
     m.options_ui?.page,
   ].filter(Boolean);
   for (const r of refs) if (!existsSync(join(dir, r))) fail(`${dir}/manifest.json references missing ${r}`);
+  // Firefox friends update through updates.json (scripts/release-firefox.mjs); a build without it strands them.
+  const updateUrl = m.browser_specific_settings?.gecko?.update_url;
+  if (target === 'firefox' && !updateUrl?.startsWith('https://')) fail(`${dir}/manifest.json has no https update_url`);
+  if (target === 'chrome' && (updateUrl || m.update_url)) fail(`${dir}/manifest.json has an update_url`);
   console.log(`${target}: checked ${refs.length} manifest references`);
 }
 process.exitCode = failed ? 1 : 0;

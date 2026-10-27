@@ -30,14 +30,19 @@ describe('platforms', () => {
 });
 
 describe('manifests', () => {
-  it('firefox is unchanged from the pre-Chrome manifest', () => {
+  it('firefox is the pre-Chrome manifest plus the self-hosted update_url', () => {
     expect(manifest('firefox')).toEqual({
       manifest_version: 3,
       name: 'romeli',
       version: '1.2.3',
       description: 'Keyboard-driven hierarchical-tag bookmark manager with a yazi-like interface.',
       browser_specific_settings: {
-        gecko: { id: 'romeli@gnodar', strict_min_version: '140.0', data_collection_permissions: { required: ['none'] } },
+        gecko: {
+          id: 'romeli@gnodar',
+          strict_min_version: '140.0',
+          update_url: 'https://raw.githubusercontent.com/gnodar01/romeli/main/updates.json',
+          data_collection_permissions: { required: ['none'] },
+        },
       },
       permissions: ['bookmarks', 'storage', 'tabs', 'clipboardWrite'],
       background: { scripts: ['background.js'], type: 'module' },
