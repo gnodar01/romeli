@@ -299,7 +299,7 @@
 
     <h2>JSON</h2>
     <p class="dim">
-      Every action's keys, for sharing or backup (the theme has its own). Edit or paste, then apply; omitted actions
+      Every action's keybinds, for sharing or backup. Edit or paste, then apply. Omitted actions
       keep their defaults. Moving between macOS and Windows/Linux: ⌘ keys (<code>&lt;D-…&gt;</code>) become the
       Windows/Super key, and a few Ctrl keys are taken by the browser there; applying warns about those.
     </p>
