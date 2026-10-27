@@ -150,25 +150,40 @@
     if (first) {
       const url = new URLSearchParams(location.search).get('reveal');
       if (url) reveal(url);
-      void offerNormalize();
+      void offerTidy();
     }
   }
 
-  /** Once per launch: offer to rename folders whose names contain the tag separators. */
-  async function offerNormalize() {
+  /** Once per launch: offer to rename folders containing the tag separators and merge duplicate copies. */
+  async function offerTidy() {
     const bad = store.unnormalizedTags();
-    if (!bad.length || !settings.askNormalize || overlay) return;
-    const lines: ConfirmLine[] = [
-      `${plural(bad.length, 'folder name')} contain "," or "/", which also separate tags.`,
-      'Rename "," → ";" and "/" → "|"?  (u undoes)',
-      ...bad.slice(0, 8).map((t) => ({ text: `▸ ${formatPath(t.path)}`, sub: `→ ${normalizeName(t.name)}/` })),
-      ...(bad.length > 8 ? [`… and ${bad.length - 8} more`] : []),
+    const dups = store.duplicateCopies();
+    if ((!bad.length && !dups.length) || !settings.askNormalize || overlay) return;
+    const list = <T,>(xs: T[], line: (x: T) => ConfirmLine): ConfirmLine[] => [
+      ...xs.slice(0, 8).map(line),
+      ...(xs.length > 8 ? [`… and ${xs.length - 8} more`] : []),
     ];
-    if (await confirm('Normalize folder names', lines)) {
-      await run(() => store.normalizeNames());
+    const lines: ConfirmLine[] = [];
+    if (bad.length) {
+      lines.push(
+        `${plural(bad.length, 'folder name')} contain "," or "/", which also separate tags.`,
+        'Rename "," → ";" and "/" → "|"?  (u undoes)',
+        ...list(bad, (t) => ({ text: `▸ ${formatPath(t.path)}`, sub: `→ ${normalizeName(t.name)}/` })),
+      );
+    }
+    if (dups.length) {
+      lines.push(
+        ...(lines.length ? ['\u00a0'] : []),
+        `${plural(dups.length, 'bookmark')} ${dups.length === 1 ? 'is a duplicate' : 'are duplicates'} of another in the same folder.`,
+        `Remove ${dups.length === 1 ? 'it' : 'them'}, keeping the oldest?  (u undoes)`,
+        ...list(dups, (c) => ({ text: `· ${c.title || c.url}`, sub: `in ${formatPath(c.tag.path)}` })),
+      );
+    }
+    if (await confirm('Tidy up bookmarks', lines)) {
+      await run(async () => [await store.normalizeNames(), await store.mergeDuplicates()]);
     } else {
       settings = await saveSettings({ askNormalize: false });
-      say('ok, won\'t ask again · normalize any time from settings', 'warn');
+      say("ok, won't ask again · tidy up any time from settings", 'warn');
     }
   }
 

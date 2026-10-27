@@ -88,7 +88,9 @@ ImageMagick: `compare -metric AE before.png after.png /dev/null` prints 0 when t
   - `toolbar/`, `menu/` and `mobile/` (mobile only when non-empty) are special tags mapped onto the browser's roots (Chrome has no `menu/`). They are `fixed` and cannot be renamed, moved or deleted.
   - Items directly in "Other Bookmarks" are untagged (path `[]`, shown as `/`).
 - **An item's extra tags are extra bookmark copies with the same URL.** WebExtensions cannot read or write native Firefox tags.
-- **Item identity is the exact URL.**
+- **Item identity is the exact URL.** A tag holds an item once: duplicate copies in one folder show as one entry,
+  `Item.tags` lists each path once (`copies` keeps them all), and the launch "tidy up" prompt (with folder-name
+  normalization, same `askNormalize` flag) offers `mergeDuplicates`, keeping the oldest copy.
 - **Tag order:** copies are ordered by `dateAdded` ascending, and the oldest copy is primary (the item's "real" location). Only orders that differ from that are stored as overrides, keyed by URL with tag-path keys. Renaming or moving a tag must rewrite the overrides (`rewriteOrders`, `normalizeNames`).
 - **Redundancy is collapsed:** adding a descendant tag replaces its ancestor in place, and adding an ancestor of an existing tag is a no-op with a warning.
 - **`d` vs `D`:** `d` on an item removes that one copy, and removing the last copy deletes the bookmark. `D` removes every copy.

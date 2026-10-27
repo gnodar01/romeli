@@ -36,6 +36,8 @@ api.seed({
 });
 // a second tag for yazi
 await api.create({ parentId: [...api.nodes.values()].find((n) => n.title === 'terminal')!.id, title: 'yazi', url: 'https://yazi-rs.github.io' });
+// a duplicate copy in one folder (shown once; the launch prompt offers to merge it)
+await api.create({ parentId: [...api.nodes.values()].find((n) => n.title === 'kernel')!.id, title: 'kernel.org', url: 'https://kernel.org' });
 
 const onCreated = event(), onRemoved = event(), onChanged = event(), onMoved = event(), storageChanged = event();
 const onChildrenReordered = event(), onImportEnded = event(), onMessage = event();

@@ -523,6 +523,53 @@ export class Store {
     };
   }
 
+  /**
+   * Extra copies of an item in a folder that already holds it (all but the oldest there). The
+   * browser allows them, but a tag holds an item once, so romeli shows them as one entry.
+   */
+  duplicateCopies(): Copy[] {
+    const out: Copy[] = [];
+    for (const item of this.model.items.values()) {
+      if (item.copies.length === item.tags.length) continue;
+      const seen = new Set<string>();
+      // `copies` is oldest-first within a tag, so the first one seen is kept.
+      for (const c of item.copies) {
+        if (seen.has(c.tag.key)) out.push(c);
+        else seen.add(c.tag.key);
+      }
+    }
+    return out;
+  }
+
+  /** Remove every duplicate copy, keeping the oldest in each folder (so dateAdded and tag order survive). */
+  async mergeDuplicates(): Promise<OpResult> {
+    await this.reload();
+    const removed = this.duplicateCopies().map((c) => ({ url: c.url, title: c.title, path: c.tag.path, index: c.index }));
+    if (!removed.length) return { warnings: [] };
+    const urls = new Set(removed.map((d) => d.url));
+    const apply = async () => {
+      await this.reload();
+      for (const c of this.duplicateCopies()) if (urls.has(c.url)) await this.api.remove(c.id);
+      await this.reload();
+    };
+    await apply();
+    return {
+      warnings: [],
+      entry: {
+        label: `merge ${plural(removed.length, 'duplicate')}`,
+        undo: async () => {
+          await this.reload();
+          // Recreate in ascending index order so each lands back at its old position.
+          for (const d of [...removed].sort((a, b) => a.index - b.index)) {
+            const tag = await this.ensureTag(d.path);
+            await this.withIndex(d.index, (i) => this.api.create({ parentId: tag.id, title: d.title, url: d.url, index: i }));
+          }
+        },
+        redo: apply,
+      },
+    };
+  }
+
   /** Count what a tag deletion touches, for the confirmation prompt. */
   describeTagDeletion(path: TagPath): { tags: number; items: number; orphaned: number } {
     const tag = this.model.tag(path);

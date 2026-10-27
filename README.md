@@ -126,6 +126,8 @@ drives the real extension on real bookmarks (`harness/real-chrome.mjs`); install
   (`,` → `;`, `/` → `|`, undoable with `u`); answering no is remembered (synced), and the settings page has
   a *normalize* button and the "ask on launch" toggle. Bookmark titles are never touched — only folder names
   are parsed as tags.
+* A folder can hold the same URL twice; romeli shows it once (a tag holds an item once). The same launch prompt
+  offers to merge such duplicates, keeping the oldest copy (undoable with `u`); the settings page has a *merge* button.
 * Favicons: Firefox doesn't expose its icon cache, so romeli captures them from your tabs (when you bookmark or
   visit a bookmarked page). Chrome serves its cached icons directly. Nothing is fetched from the network.
 * On Linux/Windows `Ctrl+W` is reserved by Firefox and closes the window; use `Ctrl+Backspace` in the tag field there.

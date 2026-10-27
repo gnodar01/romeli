@@ -1,4 +1,4 @@
-// Checks: normalize prompt, yazi-style find, help pane, two-line delete confirm, s/S + Shift+Enter, form keys, settings errors.
+// Checks: tidy-up prompt (names + duplicates), yazi-style find, help pane, two-line delete confirm, s/S + Shift+Enter, form keys, settings errors.
 import { BASE, TARGET, checker, launch } from './lib.mjs';
 const out = process.argv[2] ?? '.';
 const browser = await launch();
@@ -21,14 +21,21 @@ const rows = () => page.$$eval('.current .row', (rs) => rs.map((r) => r.textCont
 const shot = (n) => page.screenshot({ path: `${out}/${n}.png` });
 const URL = BASE + '/browser.html';
 
-// 1. normalize prompt
+// 1. tidy-up prompt: folder names and a duplicate in linux/kernel/
+const kernelCount = () => page.evaluate(() => [...window.__api.nodes.values()].filter((n) => n.url === 'https://kernel.org').length);
 await page.goto(URL); await sleep(1200);
-console.log('1 prompt:', await text('.confirm'));
+const prompt = await text('.confirm');
+console.log('1 prompt:', prompt);
+check(prompt?.includes('news, blogs') && prompt.includes('kernel.org'), 'launch prompt lists bad names and the duplicate');
 await shot('20-normalize');
 await press('y'); await sleep(600);
 console.log('1 after y rows:', (await rows()).filter((r) => /news|testing/.test(r)));
+check((await rows()).some((r) => r.includes('news; blogs')), 'y renames folders');
+check((await kernelCount()) === 1, 'y merges the duplicate');
 await press('u'); await sleep(600);
 console.log('1 after undo rows:', (await rows()).filter((r) => /news|testing/.test(r)));
+check((await rows()).some((r) => r.includes('news, blogs')), 'one u undoes the renames');
+check((await kernelCount()) === 2, 'the same u restores the duplicate');
 // harness storage is in-memory, so test "no" within one page life: settings flag flips
 await page.goto(URL); await sleep(1200);
 await press('n'); await sleep(300);
@@ -142,6 +149,11 @@ await page.evaluate(() => window.scrollTo(0, 0));
 await page.$$eval('section:nth-of-type(2) button', (bs) => bs.find((b) => b.textContent === 'reset all').click());
 await sleep(300);
 check((await page.$eval('#key-up', (i) => i.value)) === 'k <Up>' && JSON.parse(await page.$eval(keysBox, (t) => t.value)).up[0] === 'k', 'reset all also resets the JSON');
+const tidy = () => page.$$eval('.box', (bs) => bs.find((b) => b.textContent.includes('tidy up'))?.textContent.replace(/\s+/g, ' '));
+check((await tidy())?.includes('linux/kernel/ · kernel.org'), 'settings list the duplicate');
+await page.$$eval('button', (bs) => bs.find((b) => b.textContent.includes('merge 1 duplicate')).click());
+await sleep(400);
+check((await tidy())?.includes('no duplicate bookmarks') && (await kernelCount()) === 1, 'settings merge button removes the duplicate');
 if (TARGET === 'chrome') {
   // Chrome can't change extension shortcuts itself: read-only list + link to its settings page.
   const shortcuts = await text('section:nth-of-type(1)');

@@ -52,6 +52,8 @@ await keys('l');
 log('in linux:', await text('header'));
 await keys('g', 'g', 'l'); // kernel? whichever first
 log('entered:', await text('header'));
+const krows = await page.$$eval('.current .row', (rs) => rs.map((r) => r.textContent.replace(/\s+/g, ' ').trim()));
+check((await text('header')).includes('linux/kernel/') && krows.length === 1, `a duplicate copy shows as one row: ${JSON.stringify(krows)}`);
 await keys('h');
 // find terminal with /
 await keys('/');

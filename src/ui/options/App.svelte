@@ -29,6 +29,7 @@
   let recording = $state<Action | null>(null);
   let recordingCmd = $state<string | null>(null);
   let badTags = $state<{ path: string; name: string }[]>([]);
+  let dups = $state<{ path: string; title: string }[]>([]);
   let keysJson = $state('');
   /** What the last keys import ignored or expects not to work on this OS. */
   let importNotes = $state<string[]>([]);
@@ -52,6 +53,7 @@
   async function loadBadTags() {
     await store.load();
     badTags = store.unnormalizedTags().map((t) => ({ path: formatPath(t.path), name: t.name }));
+    dups = store.duplicateCopies().map((c) => ({ path: formatPath(c.tag.path), title: c.title || c.url }));
   }
 
   const fmtKeys = (b: Settings['bindings']) => formatBindings(fullBindings(b, actions));
@@ -190,6 +192,16 @@
     }
   }
 
+  async function mergeDuplicates() {
+    try {
+      const { entry } = await store.mergeDuplicates();
+      await loadBadTags();
+      flash(entry ? entry.label : 'nothing to merge');
+    } catch (e) {
+      flash((e as Error).message, true);
+    }
+  }
+
   async function setAsk(v: boolean) {
     settings = await saveSettings({ askNormalize: v });
   }
@@ -306,7 +318,7 @@
   </section>
 
   <section class="box">
-    <span class="box-title">folder names</span>
+    <span class="box-title">tidy up</span>
     <p class="dim">
       Tag lists use <code>,</code> and <code>/</code> as separators, so folder names containing them are ambiguous.
       Normalizing renames <code>,</code> → <code>;</code> and <code>/</code> → <code>|</code>. From here it can't be
@@ -322,9 +334,23 @@
     {:else}
       <p class="ok">all folder names are clean</p>
     {/if}
+    <p class="dim">
+      A folder can hold the same bookmark twice; romeli shows it once. Merging removes the extra copies and keeps
+      the oldest. From here it can't be undone; from the prompt in the browser, <code>u</code> undoes it.
+    </p>
+    {#if dups.length}
+      <div class="bad scroll">
+        {#each dups as d}<div>{d.path} <span class="dim">·</span> {d.title}</div>{/each}
+      </div>
+      <div class="toolbar">
+        <button onclick={mergeDuplicates}>merge {plural(dups.length, 'duplicate')}</button>
+      </div>
+    {:else}
+      <p class="ok">no duplicate bookmarks</p>
+    {/if}
     <label class="check">
       <input type="checkbox" checked={settings.askNormalize} onchange={(e) => setAsk(e.currentTarget.checked)} />
-      ask when romeli opens and finds such names
+      ask when romeli opens and finds either
     </label>
   </section>
 

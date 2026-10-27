@@ -180,6 +180,25 @@ describe.each(FLAVORS)('%s', (flavor) => {
       await store.setItemTags('https://1', 'one', [P('a'), P('b')]);
       expect(api.dump()).toEqual([{ a: ['one https://1'] }, { b: ['one https://1'] }]);
     });
+
+    it('merge keeps the oldest copy; undo puts the duplicate back in place', async () => {
+      const { api, store } = await setup({ a: { one: 'https://1', two: 'https://2' }, b: { one: 'https://1' } });
+      const folder = store.model.tagsByKey.get('a')!;
+      await api.create({ parentId: folder.id, title: 'one again', url: 'https://1', index: 1 });
+      await store.reload();
+      const before = api.dump();
+      expect(store.duplicateCopies().map((c) => c.title)).toEqual(['one again']);
+
+      const { entry } = await store.mergeDuplicates();
+      expect(entry!.label).toBe('merge 1 duplicate');
+      expect(api.dump()).toEqual([{ a: ['one https://1', 'two https://2'] }, { b: ['one https://1'] }]);
+      expect(store.duplicateCopies()).toEqual([]);
+      await entry!.undo();
+      expect(api.dump()).toEqual(before);
+      await entry!.redo();
+      expect(api.dump()).toEqual([{ a: ['one https://1', 'two https://2'] }, { b: ['one https://1'] }]);
+      expect((await store.mergeDuplicates()).entry).toBeUndefined();
+    });
   });
 
   it('copyTag mirrors the subtree', async () => {

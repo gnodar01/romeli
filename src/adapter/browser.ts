@@ -33,7 +33,7 @@ export interface Settings {
   sort: SortKey;
   reverse: boolean;
   tagsFirst: boolean;
-  /** Offer to normalize folder names containing ',' or '/' when the browser opens. */
+  /** Offer to tidy up when the browser opens: folder names containing ',' or '/', and duplicate copies in one folder. */
   askNormalize: boolean;
   bindings: Partial<Record<string, string[]>>;
 }
