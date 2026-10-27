@@ -1,7 +1,7 @@
 # romeli
 
 <picture>
-    <img alt="romeli" src="public/icons/romeli.svg">
+    <img alt="romeli" src="public/icons/romeli.svg" height="256px">
 </picture>
 
 A keyboard-driven Firefox and Chrome extension that manages your **native browser bookmarks** as
