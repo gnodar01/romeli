@@ -1,5 +1,9 @@
 # romeli
 
+<picture>
+    <img alt="romeli" src="public/icons/romeli.svg">
+</picture>
+
 A keyboard-driven Firefox and Chrome extension that manages your **native browser bookmarks** as
 [geekmarks-style hierarchical tags](https://dmitryfrank.com/projects/geekmarks/article), with a
 [yazi](https://yazi-rs.github.io/)-like Miller-column interface in the [Dracula](https://draculatheme.com) palette (fully themeable).
