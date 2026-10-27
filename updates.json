@@ -1,7 +1,18 @@
 {
   "addons": {
     "romeli@gnodar": {
-      "updates": []
+      "updates": [
+        {
+          "version": "0.3.0",
+          "update_link": "https://github.com/gnodar01/romeli/releases/download/v0.3.0/romeli-0.3.0.xpi",
+          "update_hash": "sha256:3ac8b3b861c9056a2a058bf16f257516f5228ff8f261e04b3628420d706c7954",
+          "browser_specific_settings": {
+            "gecko": {
+              "strict_min_version": "140.0"
+            }
+          }
+        }
+      ]
     }
   }
 }
