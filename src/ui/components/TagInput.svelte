@@ -7,7 +7,7 @@
     model,
     value = $bindable(''),
     input = $bindable<HTMLInputElement | undefined>(),
-    placeholder = 'linux/terminal/, tool/CLI/',
+    placeholder = 'media/blogs/tech/, programming languages/python/',
   }: {
     model: Model;
     value?: string;
