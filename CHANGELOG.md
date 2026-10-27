@@ -5,6 +5,16 @@ versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.3.1] - 2026-10-27
+
+### Fixed
+
+- When pressing `o` to open an item, Firefox fell back to using first created window instead of the last focused one
+  due to extension-API limitations (Chrome support is more robust). This has been fixed by adding a listener, and having
+  romeli keep track of focused windows itself via `storage.session` state. Now pressing `o` will always place the item
+  in the active tab of the last-focused, unminimized, *normal* window, or the last-focused, *normal* window if all are
+  minimized.
+
 ## [0.3.0] - 2026-10-26
 
 ### Added

@@ -5,6 +5,7 @@ import { mergeBindings, type Bindings } from '../core/keymap';
 import { sanitizeTheme, themeCss, type Theme } from '../core/theme';
 import { ext } from '../platform/ext';
 import { platform } from '../platform';
+import { pickWindow, pushRecent } from './windows';
 
 export const bookmarksApi: BookmarksApi = {
   getTree: () => ext.bookmarks.getTree() as never,
@@ -179,15 +180,28 @@ export function onExternalChange(fn: () => void, delay = 80): () => void {
 
 // ------------------------------------------------------------------ tabs
 
+const RECENT_KEY = 'recentWindows';
+let recentQueue = Promise.resolve();
+
+/** Record that a normal window was focused (`storage.session`, most recent first). Called by the background. */
+export function rememberWindow(id: number): Promise<void> {
+  recentQueue = recentQueue
+    .then(async () => {
+      const recent = ((await ext.storage.session.get(RECENT_KEY))[RECENT_KEY] as number[] | undefined) ?? [];
+      if (recent[0] !== id) await ext.storage.session.set({ [RECENT_KEY]: pushRecent(recent, id) });
+    })
+    .catch(() => {});
+  return recentQueue;
+}
+
 /** The active tab of the most recently focused normal (non-popup) window. */
 export async function activeNormalTab(): Promise<browser.tabs.Tab | undefined> {
-  let win = await ext.windows.getLastFocused({ windowTypes: ['normal'], populate: true }).catch(() => undefined);
-  // Never target romeli's own popup windows, even if the windowTypes filter is ignored.
-  if (!win || win.type !== 'normal') {
-    const all = await ext.windows.getAll({ windowTypes: ['normal'], populate: true });
-    win = all.find((w) => w.type === 'normal' && w.focused) ?? all.find((w) => w.type === 'normal');
-  }
-  return win?.tabs?.find((t) => t.active);
+  // Firefox ignores windowTypes here and returns romeli's popup while it's focused; pickWindow handles that.
+  const last = await ext.windows.getLastFocused({ windowTypes: ['normal'], populate: true }).catch(() => undefined);
+  if (last?.type === 'normal') return last.tabs?.find((t) => t.active);
+  const all = await ext.windows.getAll({ windowTypes: ['normal'], populate: true });
+  const recent = (await ext.storage.session.get(RECENT_KEY))[RECENT_KEY] as number[] | undefined;
+  return pickWindow(last, all, recent ?? [])?.tabs?.find((t) => t.active);
 }
 
 export async function openUrl(url: string, where: 'current' | 'new' | 'background') {

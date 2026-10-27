@@ -1,4 +1,4 @@
-import { activeNormalTab, saveFavicon } from '../adapter/browser';
+import { activeNormalTab, rememberWindow, saveFavicon } from '../adapter/browser';
 import { platform } from '../platform';
 import { ext } from '../platform/ext';
 
@@ -14,6 +14,9 @@ const SIZES: Record<Kind, { width: number; height: number }> = {
  * Resolves to true when an already open browser window was focused instead.
  */
 async function openWindow(kind: Kind, query = ''): Promise<boolean> {
+  // The window that the shortcut or toolbar button came from: track it even if no focus change was seen yet.
+  const parent = await ext.windows.getLastFocused({ windowTypes: ['normal'] }).catch(() => undefined);
+  if (parent?.type === 'normal' && parent.id !== undefined) await rememberWindow(parent.id);
   const key = `win.${kind}`;
   const id = (await ext.storage.session.get(key))[key] as number | undefined;
   if (id !== undefined) {
@@ -29,16 +32,11 @@ async function openWindow(kind: Kind, query = ''): Promise<boolean> {
   }
   const size = SIZES[kind];
   let pos = {};
-  try {
-    const parent = await ext.windows.getLastFocused({ windowTypes: ['normal'] });
-    if (parent.width && parent.height) {
-      pos = {
-        left: Math.round((parent.left ?? 0) + (parent.width - size.width) / 2),
-        top: Math.round((parent.top ?? 0) + (parent.height - size.height) / 3),
-      };
-    }
-  } catch {
-    // no normal window
+  if (parent?.width && parent.height) {
+    pos = {
+      left: Math.round((parent.left ?? 0) + (parent.width - size.width) / 2),
+      top: Math.round((parent.top ?? 0) + (parent.height - size.height) / 3),
+    };
   }
   const win = await ext.windows.create({
     type: 'popup',
@@ -66,12 +64,21 @@ async function createBookmark() {
   await openWindow('create', `?${params}`);
 }
 
+// ------------------------------------------------------------------ listeners
+
 ext.commands.onCommand.addListener((command) => {
   if (command === 'open-browser') void openBrowser();
   if (command === 'create-bookmark') void createBookmark();
 });
 
 ext.action.onClicked.addListener(() => void openBrowser());
+
+// Firefox's getLastFocused ignores windowTypes, so remember the normal windows the user focuses (see adapter/windows.ts).
+ext.windows.onFocusChanged.addListener(async (id) => {
+  if (id === ext.windows.WINDOW_ID_NONE) return;
+  const win = await ext.windows.get(id).catch(() => undefined);
+  if (win?.type === 'normal') await rememberWindow(id);
+});
 
 ext.windows.onRemoved.addListener(async (id) => {
   const all = await ext.storage.session.get(null);

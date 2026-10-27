@@ -235,6 +235,22 @@ const after = await popups();
 log('popups:', after);
 check(after.length === popupsBefore + 1 && after.every((u) => u.endsWith('/ui/browser/index.html')), 'open-browser opens exactly one popup window');
 
+// 4b. Background: focused normal windows are tracked, popups aren't (Firefox's fallback for picking the window to open in).
+// New windows get focus; windows.update({ focused }) fires no focus event while Chrome for Testing isn't the OS's front app.
+const tracked = await worker.evaluate(async () => {
+  const a = await chrome.windows.create({ type: 'normal', url: 'about:blank' });
+  const b = await chrome.windows.create({ type: 'normal', url: 'about:blank' });
+  await new Promise((r) => setTimeout(r, 500));
+  const recent = (await chrome.storage.session.get('recentWindows')).recentWindows ?? [];
+  const popupIds = (await chrome.windows.getAll({ windowTypes: ['popup'] })).map((w) => w.id);
+  await chrome.windows.remove(a.id);
+  await chrome.windows.remove(b.id);
+  return { a: a.id, b: b.id, recent, popupIds };
+});
+log('tracked windows:', tracked);
+check(tracked.recent[0] === tracked.b && tracked.recent[1] === tracked.a, 'focused normal windows are tracked, most recent first');
+check(tracked.popupIds.length > 0 && !tracked.recent.some((id) => tracked.popupIds.includes(id)), "romeli's popup is not tracked");
+
 // 5. Options page: read-only shortcuts.
 await page.goto(`${base}/ui/options/index.html`);
 await sleep(800);

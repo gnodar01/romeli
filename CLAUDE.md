@@ -137,7 +137,10 @@ ImageMagick: `compare -metric AE before.png after.png /dev/null` prints 0 when t
 - **Svelte exports:** don't `export` types from a component's instance script. Put shared UI types in `src/ui/browser/view.ts`.
 - **TypeScript:** svelte-check needs TS 6, so `typescript@~6` is pinned. Don't upgrade it to 7.
 - **`Ctrl+W`** (delete back one level in the tag input) is reserved by Firefox and Chrome on Linux/Windows.
-- **Opening URLs** must target a `normal` window, never romeli's popup (`activeNormalTab`).
+- **Opening URLs** must target a `normal` window, never romeli's popup (`activeNormalTab`). Firefox ignores
+  `windowTypes` in `windows.getLastFocused` (it returns romeli's popup) and reports `lastAccessed` = now for every
+  window's active tab, so the background tracks focused normal windows (`onFocusChanged`, seeded when romeli opens,
+  `storage.session` key `recentWindows`) and `pickWindow` (`src/adapter/windows.ts`) skips closed and minimized ones.
 - **Event pages:** the background script is MV3 (`"type": "module"`) and can be suspended. Keep its state in `storage.session`, not in variables.
 - **Browser versions:** Firefox 140+ (`data_collection_permissions`), Chrome 134+ (`folderType`/`syncing` on bookmark nodes).
 - **Harness flakiness:** the first harness run after editing source files can log `error loading dynamically imported module` (vite re-optimizing). Re-run before treating it as a bug.
