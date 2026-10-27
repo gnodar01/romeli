@@ -12,22 +12,37 @@ it everywhere. (Firefox and Chrome don't share bookmarks with each other.)
 
 ## How tags map onto bookmarks
 
-| Concept | Firefox representation |
-|---|---|
-| Hierarchical tag `linux/terminal/` | Folder `Other Bookmarks/linux/terminal` (created on demand, `mkdir -p`) |
-| `toolbar/`, `menu/` | The Bookmarks Toolbar / Bookmarks Menu roots (Chrome: the Bookmarks bar; there is no `menu/`) |
-| Item with tags `linux/terminal/, tool/CLI/` | One bookmark **copy** per tag, all sharing the URL |
-| Primary tag (first in list) | The oldest copy — i.e. the item's "real" location |
-| Untagged item | Bookmark directly in *Other Bookmarks* (`/`) |
+Firefox [standardizes](https://support.mozilla.org/en-US/kb/bookmarks-firefox) a set of special bookmark folders.
+The *Bookmarks Menu* folder contains items that appear in the top level of the Bookmarks menu bar.
+The *Bookmarks Toolbar* folder contains items that appear in the [toolbar](https://support.mozilla.org/en-US/kb/bookmarks-firefox#w_bookmarks-toolbar), at the top of each Firefox window, when not hidden.
+The *Other Bookmarks* folder shows up as a folder on the right-hand side of the toolbar, if it's not empty and not [hidden](https://support.mozilla.org/en-US/kb/remove-other-bookmarks-folder-from-bookmarks-toolbar).
+The *Mobile Bookmarks* folder for bookmarks made on mobile devices with firefox, if any.
 
-* WebExtensions cannot access Firefox's built-in tags, so secondary tags are real copies. This keeps the native
-  tree, the Library and Firefox Sync complete.
-* Tag order defaults to copy age (oldest = primary). Reorders done in romeli (`e`) are stored in `storage.sync`
-  (only for items whose order differs), keyed by URL and tag *path*, so it syncs too.
+Chrome has a more limited set of special bookmark folders.
+The *Bookmarks Bar* folder contains items that appear in the toolbar, at the top of each Chrome window, if visible.
+The *Other Bookmarks* folder contains all other bookmarks. In the bookmarks manager, you explicitly see "Other Bookmarks", and in the bookmarks sidebar you see just its contents at the top level.
+
+romeli treats *Other Bookmarks* as the top level. So a tag like `linux/terminal` actually lives in `Other Bookmarks/linux/terminal` in Firefox and Chrome.
+In Firefox *Bookmarks Menu* and *Bookmarks Toolbar* show up at the top level as `menu/` and `toolbar/` with special indicators next to them.
+In Chrome *Bookmarks Bar* shows up as `toolbar/` at the top level with a special indicator next to it.
+
+When you save a new url with romeli, you assign it a list of tags, which map to the corresponding location in the native bookmakrs.
+Tagging as `linux/terminal/` and `menu/` will create a native bookmark in `Other Bookmarks/linux/terminal/` and a copy in `Bookmarks Menu/`.
+The first item in the list is special, and is considered the primary tag, having a star indicator next to it.
+The only real relevancy for that is when you search for an item its primary tag location is the one that shows up, with the others filtered out to avoid cluttering the search results.
+
+Untagged items show up directly in *Other Bookmarks*, at the top level, i.e. (`/`).
+
+Some things to note:
+* WebExtensions cannot access Firefox's built-in tags, so romeli tags do not map to browser-native tags.
+  Instead, romeli tags are just real folder locations in native bookmarks.
+* Tag order defaults to copy age (oldest = primary).
+  Reorders done in romeli (`e`) are stored in `storage.sync` (only for items whose order differs),
+  keyed by URL and tag *path*, so it syncs too.
 * Deleting the primary copy makes the next tag primary automatically.
 * Redundancy is collapsed geekmarks-style: adding `linux/terminal/` replaces `linux/`; adding `linux/` when
   `linux/terminal/` exists is a no-op with a warning.
-* Edits made in Firefox's own bookmark manager win: romeli listens to bookmark events and rebuilds.
+* Edits made in the browser's own bookmark manager win: romeli listens to bookmark events and rebuilds.
 
 ## Usage
 
