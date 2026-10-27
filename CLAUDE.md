@@ -148,19 +148,34 @@ ImageMagick: `compare -metric AE before.png after.png /dev/null` prints 0 when t
 
 ## Releasing
 
-1. `npm run verify` must pass (unit tests, svelte-check, both builds, dist checks, web-ext lint, both harnesses, real Chrome).
-2. `npm run bump [-- patch|minor|major|x.y.z]` bumps `package.json`; the build stamps the version into both manifests.
-3. Firefox: commit and push the bump, then `npm run sign` produces a signed, unlisted `.xpi` in `artifacts/` (AMO API
-   keys in `.env`). `npm run release:firefox [-- --notes "…"]` puts it (and the Chrome zip, if built) on a GitHub Release
-   `v<version>` and adds an entry to `updates.json`; pushing `updates.json` ships it. Installed copies poll it through
-   the manifest's `update_url` (`raw.githubusercontent.com/gnodar01/romeli/main/updates.json`). That URL is permanent:
-   moving the file, renaming the repo or making it private strands every install. `check:dist` and the manifest test
-   enforce the `update_url`. 0.2.0 and older had none, so those testers install the next version by hand once.
-   Maintainer and tester guides are in `tutorials/` (git-ignored).
-4. Chrome: `npm run package:chrome` produces `artifacts/romeli-chrome-<version>.zip`. Testers either unzip it and use
-   `chrome://extensions` → Developer mode → *Load unpacked* (no auto-update; reload after replacing the folder), or
-   install from a Chrome Web Store listing (unlisted is fine for testers). The store checklist is in the README.
-   Don't put a `key` in the Chrome manifest: the store rejects it.
+1. `npm run bump [-- patch|minor|major|x.y.z]` at the *start* of a version (it only touches `package.json`; the build
+   stamps the version into both manifests). AMO signs each version number once, so every release needs a new one.
+2. Changes plus a `## [<version>]` section in `CHANGELOG.md`, committed and pushed.
+3. `npm run release` (`scripts/release.mjs`) does the rest:
+   - checks (main, clean, `HEAD` = `origin/main`, tag not on GitHub, changelog section, `gh` login, AMO keys in `.env`);
+   - `npm run verify`;
+   - `web-ext sign --channel unlisted`: AMO only signs it and never serves it, and `artifacts/romeli-<v>.commit`
+     records the signed commit;
+   - `package:chrome`;
+   - a **draft** GitHub Release with the `.xpi`, the Chrome zip and the changelog section as notes, plus the
+     `updates.json` entry (`release-firefox.mjs`);
+   - `CHANGELOG.md` heading date and compare links (`scripts/changelog.mjs`);
+   - a local `[release] <v>` commit;
+   - **y/N**, then it publishes the draft (GitHub creates the tag on `HEAD~1`) and pushes.
+
+   Re-running it resumes: a signed `.xpi` skips verify and sign, and an unpushed release commit goes to the y/N.
+   `sign`, `release:firefox` and `package:chrome` still work alone. `package:firefox` (unsigned zip) is only for a
+   future listed AMO submission.
+4. Firefox installs get updates by polling `updates.json` on `main` through the manifest's `update_url`
+   (`raw.githubusercontent.com/gnodar01/romeli/main/updates.json`) and downloading the `.xpi` from the GitHub
+   Release, so **pushing `updates.json` ships the update**. That URL is permanent: moving the file, renaming the
+   repo or making it private strands every install. `check:dist` and the manifest test enforce the `update_url`.
+   0.2.0 and older had none, so those testers install by hand once. Maintainer and tester guides are in `tutorials/`
+   (git-ignored).
+5. Chrome testers either unzip `artifacts/romeli-chrome-<version>.zip` and use `chrome://extensions` → Developer mode
+   → *Load unpacked* (no auto-update; reload after replacing the folder), or install from a Chrome Web Store listing
+   (unlisted is fine for testers; the zip is uploaded by hand). The store checklist is in the README. Don't put a
+   `key` in the Chrome manifest: the store rejects it.
 
 ## State of the project
 
