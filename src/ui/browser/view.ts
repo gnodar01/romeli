@@ -45,13 +45,13 @@ export function entriesOf(model: Model, tag: TagNode, o: ViewOptions): Entry[] {
     }
     items = [...seen.values()];
   } else {
-    items = tag.copies.map((c) => ({
-      kind: 'item',
-      key: itemKey(c.url, tag.path),
-      name: c.title || c.url,
-      copy: c,
-      item: model.item(c.url)!,
-    }));
+    // One entry per item: duplicate copies in one folder would share a key.
+    const seen = new Map<string, Entry>();
+    for (const c of tag.copies) {
+      if (seen.has(c.url)) continue;
+      seen.set(c.url, { kind: 'item', key: itemKey(c.url, tag.path), name: c.title || c.url, copy: c, item: model.item(c.url)! });
+    }
+    items = [...seen.values()];
   }
 
   const value = (e: Entry): number =>

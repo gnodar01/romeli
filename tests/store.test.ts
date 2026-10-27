@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { parsePath as P } from '../src/core/tags';
 import { decodeOverrides, encodeOverrides } from '../src/core/order';
+import { entriesOf, itemKey } from '../src/ui/browser/view';
 import { FLAVORS, setup as setupFlavor, type MemoryKV, type Spec } from './mock';
 
 const ARCH = 'https://wiki.archlinux.org';
@@ -154,6 +155,31 @@ describe.each(FLAVORS)('%s', (flavor) => {
     expect(api.dump()).toEqual([{ a: ['one https://1', 'three https://3'] }]);
     await entry!.undo();
     expect(api.dump()).toEqual(before);
+  });
+
+  describe('duplicate copies in one folder', () => {
+    const dup = async () => {
+      const ctx = await setup({ a: { one: 'https://1' }, b: {} });
+      const folder = ctx.store.model.tagsByKey.get('a')!;
+      await ctx.api.create({ parentId: folder.id, title: 'one again', url: 'https://1' });
+      await ctx.store.reload();
+      return ctx;
+    };
+
+    it('count as one tag and one entry', async () => {
+      const { store } = await dup();
+      expect(store.model.item('https://1')!.copies).toHaveLength(2);
+      expect(tagsOf(store, 'https://1')).toEqual(['a']);
+      const opts = { sort: 'native', reverse: false, tagsFirst: true, recursive: false, filter: '' } as const;
+      const entries = entriesOf(store.model, store.model.tagsByKey.get('a')!, opts);
+      expect(entries.map((e) => e.key)).toEqual([itemKey('https://1', P('a'))]);
+    });
+
+    it('collapse to one copy when the item is retagged', async () => {
+      const { api, store } = await dup();
+      await store.setItemTags('https://1', 'one', [P('a'), P('b')]);
+      expect(api.dump()).toEqual([{ a: ['one https://1'] }, { b: ['one https://1'] }]);
+    });
   });
 
   it('copyTag mirrors the subtree', async () => {

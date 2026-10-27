@@ -51,7 +51,7 @@
             found={findPositions(find, e.name)}
           />
         </span>
-        {#if e.item.copies.length > 1}<span class="info" title="tags">+{e.item.copies.length - 1}</span>{/if}
+        {#if e.item.tags.length > 1}<span class="info" title="tags">+{e.item.tags.length - 1}</span>{/if}
       {/if}
     </div>
   {:else}

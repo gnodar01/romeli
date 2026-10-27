@@ -27,7 +27,7 @@ export interface Copy {
   tag: TagNode;
 }
 
-/** All copies sharing a URL. `copies[0]` is the primary location. */
+/** All copies sharing a URL. `copies[0]` is the primary location; `tags` has each tag once. */
 export interface Item {
   url: string;
   title: string;
@@ -80,7 +80,9 @@ export class Model {
     }
     for (const [url, list] of grouped) {
       const copies = orderCopies(list, overrides.get(url));
-      this.items.set(url, { url, title: copies[0].title, copies, tags: copies.map((c) => c.tag.path) });
+      // Two copies in one folder are one tag: `tags` lists each path once.
+      const tags = [...new Map(copies.map((c) => [c.tag.key, c.tag.path])).values()];
+      this.items.set(url, { url, title: copies[0].title, copies, tags });
     }
   }
 

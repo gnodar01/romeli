@@ -407,7 +407,7 @@
       }
     } else {
       for (const r of items) {
-        const last = (model.item(r.url)?.copies.length ?? 0) <= 1;
+        const last = (model.item(r.url)?.tags.length ?? 0) <= 1;
         lines.push({
           text: `· ${titleOf(r.url)}`,
           sub: `from ${formatPath(r.path)}${last ? ' — last copy, bookmark deleted' : ''}`,
