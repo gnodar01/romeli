@@ -79,7 +79,7 @@ First release, Firefox only.
   `MacCtrl+Shift+B`), and errors that stay until dismissed.
 - Scripts to bump the version, build, and sign an unlisted `.xpi` through AMO.
 
-[Unreleased]: https://github.com/gnodar01/romeli/compare/674fee8...HEAD
-[0.3.0]: https://github.com/gnodar01/romeli/compare/bca4ee5...674fee8
-[0.2.0]: https://github.com/gnodar01/romeli/compare/c53ce2c...bca4ee5
-[0.1.0]: https://github.com/gnodar01/romeli/compare/9612847...c53ce2c
+[Unreleased]: https://github.com/gnodar01/romeli/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/gnodar01/romeli/compare/v0.2.0...v0.3.0
+[0.2.0]: https://github.com/gnodar01/romeli/compare/v0.1.0...v0.2.0
+[0.1.0]: https://github.com/gnodar01/romeli/commits/v0.1.0
