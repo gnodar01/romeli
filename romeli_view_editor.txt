@@ -19,6 +19,7 @@ The same boolean operators are used.
 
 So for example we have this as our full romeli hierarchical tag tree in romeli on firefox:
 
+```
 root
     - toolbar/
     - menu/
@@ -39,9 +40,11 @@ root
         - articles/
             - news/
             - tech/
+```
 
 Then you might have a collection of "vars" (known as a "varset") like:
 
+```
 linux_discussions := 
       tech/linux/
     & tech/discussion/
@@ -53,16 +56,54 @@ linux_news :=
 compiled_langs :=
       tech/languages/c/
     + tech/languages/rust/
+```
 
 And you might have a collection of  "views" (known as a "viewset"), which reference either hieararchcial tags, or variables via "{var}" like:
 
+```
 linux :=
       {linux_discussions}
     | {linux_news}
 
 scipting_langs :=
-      tech/languages
+      tech/languages/
     & ! {compiled_langs}
+```
+
+---
+
+in the above example the expressions evaluate to:
+
+```
+linux:
+    tech/linux/
+        - item1
+        - item2
+    tech/discussion/
+        - item1
+    media/articles/tech
+        - item2
+```
+
+```
+scripting_langs:
+    tech/languages/python/
+        - ...    
+    tech/languages/javascript/
+        - ...
+```
+
+Note that for "linux", although "tech/linux/" may have contained additional items in the original tree, they are not included because they don't appear in "tech/discussion/" or "media/articles/tech/". likewise items in "tech/discussion/" or "media/articles/tech/" may have existed which are filtered out because they are not in the original "tech/linux/".
+
+Note that for "scripting_langs", we could have done:
+
+```
+scripting_langs :=
+    tech/languages/python/
+    tech/languages/javascript/
+```
+
+however, if we then in the future added "tech/languages/bash/", we would have to remember to add it into `scripting_langs`, whereas with "!{compiled_langs}", we wouldn't since "tech/languages/bash/" is not in that "var". addmitedly, if we added "tech/languages/c++/" we would have to remember to add it to `compiled_langs`, but that is a user choice.
 
 ---
 
@@ -72,6 +113,12 @@ there is no grouping operator such as parens. "vars" are the grouping mechanism.
 
 "viewset" and "varset" are separate, because "views" composed of other "views", would clutter things.
 you may only want a small handful of "views" to choose from in the main menu, while they are composed of many more "vars" that are only inspectible in the editor (explained below).
+
+---
+
+we will need to create an expression evaluation engine, and aim for performance.
+
+we will need to consider when that engine is re-run (e.g. whenever a referenced hierarchical tag is removed from the original tree, or perhaps lazily, etc.)
 
 ---
 
