@@ -193,7 +193,7 @@ ImageMagick: `compare -metric AE before.png after.png /dev/null` prints 0 when t
    (`raw.githubusercontent.com/gnodar01/romeli/main/updates.json`) and downloading the `.xpi` from the GitHub
    Release, so **pushing `updates.json` ships the update**. That URL is permanent: moving the file, renaming the
    repo or making it private strands every install. `check:dist` and the manifest test enforce the `update_url`.
-   0.2.0 and older had none, so those testers install by hand once. Maintainer and tester guides are in `tutorials/`
+   0.2.0 and older had none, so those testers install by hand once. Maintainer and tester guides are in `local_notes/`
    (git-ignored).
 5. Chrome testers either unzip `artifacts/romeli-chrome-<version>.zip` and use `chrome://extensions` → Developer mode
    → *Load unpacked* (no auto-update; reload after replacing the folder), or install from a Chrome Web Store listing
