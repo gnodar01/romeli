@@ -99,14 +99,6 @@ export type Action = keyof typeof ACTIONS;
 /** An action's description, with `{browser}` filled in (e.g. "Sort by Firefox order"). */
 export const describeAction = (a: Action, browser: string): string => ACTIONS[a].replace('{browser}', browser);
 
-/** A description split into plain text and its parenthesized comments ("(view editor only)"), for styling. */
-export function descriptionParts(desc: string): { text: string; comment: boolean }[] {
-  return desc
-    .split(/(\([^)]*\))/)
-    .filter(Boolean)
-    .map((text) => ({ text, comment: /^\(.*\)$/.test(text) }));
-}
-
 /** Sections for the help pane, in display order. */
 export const ACTION_GROUPS: [string, Action[]][] = [
   ['navigation', ['up', 'down', 'parent', 'enter', 'top', 'bottom', 'halfUp', 'halfDown', 'pageUp', 'pageDown', 'back', 'forward', 'goRoot', 'goToolbar', 'goMenu', 'prevTagLocation', 'nextTagLocation']],

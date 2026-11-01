@@ -5,7 +5,6 @@
     ACTIONS,
     DEFAULT_BINDINGS,
     describeAction,
-    descriptionParts,
     eventToKey,
     formatBindings,
     fullBindings,
@@ -19,6 +18,7 @@
   import { formatPath } from '../../core/tags';
   import { platform } from '../../platform';
   import { ext } from '../../platform/ext';
+  import Commented from './Commented.svelte';
   import TextIO from './TextIO.svelte';
   import ThemeEditor from './ThemeEditor.svelte';
   import ViewsIO from './ViewsIO.svelte';
@@ -278,7 +278,7 @@
         {@const keys = bound(a)}
         <div class="row" class:custom={!!settings.bindings[a]}>
           <label class="desc" for="key-{a}"
-            >{#each descriptionParts(describe(a)) as p}{#if p.comment}<span class="comment">{p.text}</span>{:else}{p.text}{/if}{/each}
+            ><Commented text={describe(a)} />
             <span class="json-key">{a}</span></label
           >
           <input

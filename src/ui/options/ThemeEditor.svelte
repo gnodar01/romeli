@@ -20,6 +20,7 @@
     type Theme,
   } from '../../core/theme';
 
+  import Commented from './Commented.svelte';
   import TextIO from './TextIO.svelte';
 
   let { flash }: { flash: (text: string, error?: boolean) => void } = $props();
@@ -200,7 +201,7 @@
       {#each shown as [k, d] (k)}
         {@const key = k as RoleKey}
         <div class="row color" class:custom={!!theme.roles?.[key]}>
-          <label class="desc" for="role-{k}">{d.label} <span class="json-key">{k}</span></label>
+          <label class="desc" for="role-{k}"><Commented text={d.label} /> <span class="json-key">{k}</span></label>
           <input
             type="color"
             tabindex="-1"
