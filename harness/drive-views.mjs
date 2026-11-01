@@ -98,11 +98,6 @@ await press('a'); await sleep(150); await type('music'); await press('Enter'); a
 await press('a'); await sleep(150); await type('linux/kernel'); await press('Enter'); await sleep(200);
 console.log('4 rows:', await exprRows());
 check((await exprRows()).join('|') === 'music/ 1|+ linux/kernel/ 1', 'picked tags become rows below the cursor');
-// adding an operand that's already there is a no-op
-await press('a'); await sleep(150); await type('music'); await press('Enter'); await sleep(200);
-check((await exprRows()).length === 2 && (await text('footer'))?.includes('already in music_only'), 'adding a repeated tag is a no-op');
-check((await text('.editor .col:last-child .row.cursor'))?.startsWith('music/'), 'the cursor goes to the existing row');
-await press('j');
 await press('~'); await press('!'); await sleep(200);
 console.log('4 ~ !:', await exprRows());
 check((await exprRows())[1] === '& ! linux/kernel/ 1', '~ cycles the operator and ! negates');

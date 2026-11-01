@@ -6,11 +6,9 @@ import {
   addDef,
   cycleOp,
   deleteTerms,
-  indexOfRef,
   moveDefs,
   moveTerms,
   nameProblem,
-  newTerms,
   referencing,
   refsUnder,
   related,
@@ -252,14 +250,6 @@ describe('defs edits', () => {
     expect(keys(moveTerms(e, [0, 1], 2))).toBe('cabd');
     expect(keys(moveTerms(e, [3], -1))).toBe('dabc');
     expect(keys(moveTerms(e, [1], 1))).toBe('abcd');
-  });
-
-  it('keeps each operand once per expression', () => {
-    const e = [tag('a'), ref('v'), tag('b', '&', true)];
-    expect(indexOfRef(e, { tag: 'b' })).toBe(2);
-    expect(indexOfRef(e, { var: 'V' })).toBe(1);
-    expect(indexOfRef(e, { tag: 'b' }, 2)).toBe(-1);
-    expect(newTerms(e, [tag('a'), tag('c'), tag('c'), ref('w')]).map((t) => t.ref)).toEqual([{ tag: 'c' }, { var: 'w' }]);
   });
 
   it('adds and reorders entries', () => {

@@ -10,12 +10,10 @@
     cycleOp,
     deleteDefs,
     deleteTerms,
-    indexOfRef,
     insertTerms,
     moveDefs,
     moveTerms,
     nameProblem,
-    newTerms,
     referencing,
     refsVar,
     related,
@@ -265,11 +263,6 @@
     if (!def) return say(`add a ${noun} first (h, then a)`, 'warn');
     const at = expr.hovered ? expr.hovered.index + 1 : def.expr.length;
     pickOperand(`Add to ${def.name}`, '', async (ref) => {
-      const dup = indexOfRef(def.expr, ref);
-      if (dup >= 0) {
-        expr.reset(String(dup));
-        return say(`${refLabel(ref)} is already in ${def.name}`, 'warn');
-      }
       if (!isVarRef(ref)) {
         const rel = related(def.expr, ref.tag);
         if (rel) {
@@ -292,7 +285,6 @@
     const row = expr.hovered;
     if (!def || !row) return;
     pickOperand(`Replace ${row.name}`, row.name.replace(/^\{|\}$|\/$/g, ''), (ref) => {
-      if (indexOfRef(def.expr, ref, row.index) >= 0) return say(`${refLabel(ref)} is already in ${def.name}`, 'warn');
       void apply(`replace ${row.name} → ${refLabel(ref)}`, (d) => setExpr(d, kind, def.id, (e) => replaceTerm(e, row.index, ref)));
     });
   }
@@ -323,13 +315,7 @@
     const c = clip;
     const at = expr.hovered ? expr.hovered.index + 1 : def.expr.length;
     if (c.mode === 'yank') {
-      const fresh = newTerms(def.expr, c.terms);
-      if (!fresh.length) return say(`already in ${def.name}`, 'warn');
-      const skipped = c.terms.length - fresh.length;
-      if (await apply(`put ${plural(fresh.length, 'row')} in ${def.name}`, (d) => setExpr(d, kind, def.id, (e) => insertTerms(e, fresh, at)))) {
-        expr.reset(String(at));
-        if (skipped) say(`put ${plural(fresh.length, 'row')} · ${skipped} already there`, 'warn');
-      }
+      if (await apply(`put ${plural(c.terms.length, 'row')} in ${def.name}`, (d) => setExpr(d, kind, def.id, (e) => insertTerms(e, c.terms, at)))) expr.reset(String(at));
       return;
     }
     clip = null;
@@ -338,9 +324,8 @@
       await apply(`move ${plural(n, 'row')}`, (d) => setExpr(d, kind, def.id, (e) => moveTerms(e, c.idxs, at - 1)));
       return;
     }
-    // Rows whose operand the target already has merge into it.
     const ok = await apply(`move ${plural(n, 'row')} to ${def.name}`, (d) =>
-      setExpr(setExpr(d, c.kind, c.defId, (e) => deleteTerms(e, c.idxs)), kind, def.id, (e) => insertTerms(e, newTerms(e, c.terms), at)),
+      setExpr(setExpr(d, c.kind, c.defId, (e) => deleteTerms(e, c.idxs)), kind, def.id, (e) => insertTerms(e, c.terms, at)),
     );
     if (ok) expr.reset(String(at));
   }
