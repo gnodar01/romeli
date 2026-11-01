@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { DEFAULT_BINDINGS, descriptionParts, eventToKey, formatBindings, fullBindings, platformWarnings, sanitizeBindings } from '../src/core/keymap';
+import { descriptionParts } from '../src/core/text';
+import { DEFAULT_BINDINGS, eventToKey, formatBindings, fullBindings, platformWarnings, sanitizeBindings } from '../src/core/keymap';
 
 const ev = (key: string, mods: Partial<Record<'ctrlKey' | 'altKey' | 'metaKey' | 'shiftKey', boolean>> = {}, code?: string) => ({
   key,
