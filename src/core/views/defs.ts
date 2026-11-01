@@ -132,16 +132,6 @@ export const sameRef = (a: Ref, b: Ref): boolean =>
 
 // ------------------------------------------------------------------ term lists
 
-/** Index of a term with this operand (ignoring row `except`), or -1. An operand appears once per expression. */
-export const indexOfRef = (expr: readonly Term[], ref: Ref, except = -1): number => expr.findIndex((t, i) => i !== except && sameRef(t.ref, ref));
-
-/** `terms` minus any whose operand is already in `expr` (or earlier in `terms`). */
-export function newTerms(expr: readonly Term[], terms: readonly Term[]): Term[] {
-  const out: Term[] = [];
-  for (const t of terms) if (indexOfRef(expr, t.ref) < 0 && indexOfRef(out, t.ref) < 0) out.push(t);
-  return out;
-}
-
 export const term = (ref: Ref, op: Op = '+', not = false): Term => ({ op, not, ref });
 
 export function insertTerms(expr: readonly Term[], terms: readonly Term[], at: number): Term[] {
