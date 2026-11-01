@@ -235,7 +235,7 @@ await shot('45-options-views');
 // 9. options: comments in key descriptions use the comment color
 const commentColors = await page.$$eval('label[for="key-cycleOp"] .comment, label[for="key-cycleOp"]', (els) => els.map((e) => getComputedStyle(e).color));
 console.log('9 comment colors:', commentColors);
-check(commentColors.length === 2 && commentColors[0] !== commentColors[1], '(view editor only) is in the comment color');
+check(commentColors.length === 3 && commentColors.slice(1).every((c) => c !== commentColors[0]), '(or, and, xor) and (view editor only) are in the comment color');
 const roleColors = await page.$$eval('label[for="role-line-bg"], label[for="role-line-bg"] .comment', (els) => els.map((e) => getComputedStyle(e).color));
 check(roleColors.length === 2 && roleColors[0] !== roleColors[1], 'theme role comments are in the comment color');
 
