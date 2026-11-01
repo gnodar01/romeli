@@ -26,8 +26,9 @@
       (alt && act.alt ? act.alt : act.go)();
     }}
     onCancel={() => {
+      const cancel = o.onCancel;
       overlays.close();
-      o.onCancel?.();
+      cancel?.();
     }}
   />
 {:else if o?.kind === 'help'}
