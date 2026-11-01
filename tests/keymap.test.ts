@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { DEFAULT_BINDINGS, eventToKey, formatBindings, fullBindings, platformWarnings, sanitizeBindings } from '../src/core/keymap';
+import { DEFAULT_BINDINGS, descriptionParts, eventToKey, formatBindings, fullBindings, platformWarnings, sanitizeBindings } from '../src/core/keymap';
 
 const ev = (key: string, mods: Partial<Record<'ctrlKey' | 'altKey' | 'metaKey' | 'shiftKey', boolean>> = {}, code?: string) => ({
   key,
@@ -59,5 +59,16 @@ describe('platformWarnings', () => {
   it('flags ⌘ and reserved Ctrl keys off macOS, and Option characters everywhere', () => {
     expect(platformWarnings(b, false).map((w) => w.split(' ')[0])).toEqual(['<D-k>', '<A-˚>', '<C-w>']);
     expect(platformWarnings(b, true).map((w) => w.split(' ')[0])).toEqual(['<A-˚>']);
+  });
+});
+
+describe('descriptionParts', () => {
+  it('splits parenthesized comments from the text', () => {
+    expect(descriptionParts('(view tabs only) Go to it (here)')).toEqual([
+      { text: '(view tabs only)', comment: true },
+      { text: ' Go to it ', comment: false },
+      { text: '(here)', comment: true },
+    ]);
+    expect(descriptionParts('Undo')).toEqual([{ text: 'Undo', comment: false }]);
   });
 });

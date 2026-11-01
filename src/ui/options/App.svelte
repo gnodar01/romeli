@@ -5,6 +5,7 @@
     ACTIONS,
     DEFAULT_BINDINGS,
     describeAction,
+    descriptionParts,
     eventToKey,
     formatBindings,
     fullBindings,
@@ -276,7 +277,9 @@
       {#each shown as a (a)}
         {@const keys = bound(a)}
         <div class="row" class:custom={!!settings.bindings[a]}>
-          <label class="desc" for="key-{a}">{describe(a)}</label>
+          <label class="desc" for="key-{a}"
+            >{#each descriptionParts(describe(a)) as p}{#if p.comment}<span class="comment">{p.text}</span>{:else}{p.text}{/if}{/each}</label
+          >
           <input
             id="key-{a}"
             class="key"
@@ -432,6 +435,9 @@
     }
     .row.custom .desc {
       color: var(--modified);
+    }
+    .desc .comment {
+      color: var(--dim);
     }
     .key {
       color: var(--accent);
