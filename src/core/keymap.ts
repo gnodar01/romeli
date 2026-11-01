@@ -83,9 +83,9 @@ export const ACTIONS = {
   // views
   views: 'Open views (dialog)',
   viewEditor: 'Edit views and vars',
-  goPrimary: "(view tabs only) Go to the item's primary tag",
-  toggleNot: '(view editor only) Toggle ! (not)',
-  cycleOp: '(view editor only) Cycle operator + & ^',
+  goPrimary: "Go to the item's primary tag (view tabs only)",
+  toggleNot: 'Toggle ! (not) (view editor only)',
+  cycleOp: 'Cycle operator + & ^ (or, and, xor) (view editor only)',
   // misc
   undo: 'Undo',
   redo: 'Redo',
