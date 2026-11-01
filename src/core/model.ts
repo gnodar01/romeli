@@ -162,7 +162,53 @@ export class Model {
   item(url: string): Item | undefined {
     return this.items.get(url);
   }
+
+  /**
+   * A pruned copy of this model with the same ids and paths. `keepTag` decides per tag: 'none'
+   * drops its subtree, 'path' keeps it only as a route to kept descendants, 'all' keeps its
+   * copies (those passing `keepCopy`) and its whole subtree without asking again. Tags left with
+   * nothing in them are dropped. Items keep their copies' order; their `tags` are the kept ones.
+   */
+  filtered(keepTag: (t: TagNode) => Keep, keepCopy: (c: Copy) => boolean): Model {
+    const m = new Model();
+    m.tagsById.clear();
+    m.tagsByKey.clear();
+    const kept = new Map<string, Copy>();
+    const clone = (t: TagNode, parent: TagNode | null, keep: Keep): TagNode | null => {
+      const n: TagNode = { ...t, parent, tags: [], copies: [] };
+      if (keep === 'all') {
+        for (const c of t.copies) {
+          if (!keepCopy(c)) continue;
+          const copy = { ...c, tag: n };
+          n.copies.push(copy);
+          kept.set(c.id, copy);
+        }
+      }
+      for (const s of t.tags) {
+        const k = keep === 'all' ? 'all' : keepTag(s);
+        const child = k === 'none' ? null : clone(s, n, k);
+        if (child) n.tags.push(child);
+      }
+      if (parent && !n.tags.length && !n.copies.length) return null;
+      m.tagsById.set(n.id, n);
+      if (!m.tagsByKey.has(n.key)) m.tagsByKey.set(n.key, n);
+      return n;
+    };
+    m.root = clone(this.root, null, keepTag(this.root))!;
+
+    const urls = new Set([...kept.values()].map((c) => c.url));
+    for (const url of urls) {
+      const copies = this.items.get(url)!.copies.flatMap((c) => kept.get(c.id) ?? []);
+      for (const c of copies) m.copiesById.set(c.id, c);
+      const tags = [...new Map(copies.map((c) => [c.tag.key, c.tag.path])).values()];
+      m.items.set(url, { url, title: copies[0].title, copies, tags });
+    }
+    return m;
+  }
 }
+
+/** See `Model.filtered`. */
+export type Keep = 'none' | 'path' | 'all';
 
 export function findChild(tag: TagNode, name: string): TagNode | undefined {
   return tag.tags.find((t) => t.name === name) ?? tag.tags.find((t) => t.name.toLowerCase() === name.toLowerCase());

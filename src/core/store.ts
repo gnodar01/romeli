@@ -39,6 +39,11 @@ export interface CopyRef {
 
 export class OpError extends Error {}
 
+/** Something else that refers to tags by path key (views), kept in step with renames and moves. */
+export interface TagRefs {
+  rewriteTags(fn: (key: string) => string): Promise<void>;
+}
+
 /**
  * The single place that mutates bookmarks. Every public op re-reads the native tree first
  * (native tree wins), applies the change, and returns an undo entry expressed in terms of
@@ -56,6 +61,7 @@ export class Store {
     private api: BookmarksApi,
     orders: OrderStore,
     private resolveRoots: RootResolver,
+    private refs?: TagRefs,
   ) {
     this.orders = orders;
   }
@@ -317,10 +323,17 @@ export class Store {
     }
   }
 
-  private async rewriteOrders(from: TagPath, to: TagPath) {
+  /** A tag moved from `from` to `to`: rewrite everything that refers to it (or below it) by path. */
+  private async rebaseRefs(from: TagPath, to: TagPath) {
+    const fn = (k: string) => pathKey(rebase(parsePath(k), from, to));
+    await this.rewriteOrders(fn);
+    await this.refs?.rewriteTags(fn);
+  }
+
+  private async rewriteOrders(fn: (key: string) => string) {
     let changed = false;
     for (const [url, keys] of this.overrides) {
-      const next = keys.map((k) => pathKey(rebase(parsePath(k), from, to)));
+      const next = keys.map(fn);
       if (next.join('\n') !== keys.join('\n')) {
         this.overrides.set(url, next);
         changed = true;
@@ -358,7 +371,7 @@ export class Store {
     const apply = async (from: TagPath, dest: TagPath, title: string) => {
       await this.reload();
       await this.api.update(this.requireTag(from).id, { title });
-      await this.rewriteOrders(from, dest);
+      await this.rebaseRefs(from, dest);
     };
     await apply(path, to, name);
     return {
@@ -384,7 +397,7 @@ export class Store {
       const t = this.requireTag(from);
       const target = await this.ensureTag(parent);
       await this.withIndex(index, (i) => this.api.move(t.id, { parentId: target.id, index: i }));
-      await this.rewriteOrders(from, [...parent, t.name]);
+      await this.rebaseRefs(from, [...parent, t.name]);
     };
     await apply(path, dest);
     return {
@@ -511,6 +524,7 @@ export class Store {
         this.overrides = new Map(savedOrders);
       }
       await this.saveOrders();
+      await this.refs?.rewriteTags((k) => map.get(k) ?? k);
     };
     await apply(true);
     return {

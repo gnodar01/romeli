@@ -115,3 +115,6 @@ export interface PickerRow<V> {
 }
 
 export type ConfirmLine = string | { text: string; sub?: string; warn?: boolean };
+
+/** A status-bar badge; `kind` picks its color. */
+export type Badge = { text: string; kind: 'warn' | 'yank' | 'cut' | 'sel' | 'find' | 'filter' | 'rec' | 'sort' | 'count' };

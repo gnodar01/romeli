@@ -1,10 +1,11 @@
 <script lang="ts" generics="T">
-  import { onMount } from 'svelte';
+  import { onMount, untrack } from 'svelte';
   import type { PickerRow } from '../browser/view';
   import Highlight from './Highlight.svelte';
 
   let {
     title,
+    value = '',
     placeholder = '',
     hint = '',
     search,
@@ -12,6 +13,8 @@
     onCancel,
   }: {
     title: string;
+    /** Initial query. */
+    value?: string;
     placeholder?: string;
     hint?: string;
     search: (q: string) => PickerRow<T>[];
@@ -20,7 +23,7 @@
     onCancel: () => void;
   } = $props();
 
-  let q = $state('');
+  let q = $state(untrack(() => value));
   let sel = $state(0);
   let input = $state<HTMLInputElement>();
   let list = $state<HTMLElement>();

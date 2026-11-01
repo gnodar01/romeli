@@ -87,13 +87,43 @@ doesn't let extensions change their own shortcuts: use `chrome://extensions/shor
 | `t` `1`–`9` `[` `]` `C-c` | tabs |
 | `cc` `cn` `ct` | copy url / name / tag path |
 | `u` `C-r` | undo / redo |
-| `?` `~` `F1` | key reference pane (`j/k` scroll, `J/K` half page, `gg/G`, `Esc`) |
+| `T` `K` | open views (as read-only tabs) / edit views and vars — see *Views* |
+| `?` `F1` | key reference pane (`j/k` scroll, `J/K` half page, `gg/G`, `Esc`) |
 | `Esc` `q` | cancel / close |
 
 The keymap can be copied out and pasted back in as JSON (Settings → *browser keys* → JSON), separately from the
 theme: one line per action, and actions left out keep their defaults. ⌥ keys are written by the physical key
 (`<A-k>`, not macOS's `˚`), so they mean the same everywhere. Applying warns about keys unlikely to work on this OS:
 ⌘ keys (`<D-…>`) off macOS, and Ctrl keys Firefox and Chrome keep for themselves on Windows/Linux (`C-w`, `C-t`…).
+
+### Views
+
+A **view** is a saved filter over your tags, opened as a read-only romeli tab. It's a boolean expression of tags
+and **vars**; a var is an expression of tags only, and the only way to group (there are no parentheses):
+
+```
+[vars]
+linux_news := tech/linux/ & media/articles/tech/
+compiled_langs := tech/languages/c/ + tech/languages/rust/
+
+[views]
+scripting langs := tech/languages/ & !{compiled_langs}
+```
+
+- Operators, tightest first: `!` not, `&` and, `^` xor, `+` or. A tag includes its subtags.
+- A view shows its matches only under the tags it references (without `!`), with empty folders pruned. A part of
+  the expression with nothing positive in it (`!tech/`) widens that to the whole tree.
+- `T` lists the views (`/` `n` `N` `f` `Space` `v` `V` work as in the browser); `Enter` or `o` opens the selected ones
+  as tabs. In a view tab everything is read-only (yanking works); `g.` goes to an item's primary tag in a normal tab.
+- `K` is the editor: `[` `]` switch between the viewset and varset, `l` `h` between the list and the expression.
+  In the list, `a` `r` `d` add / rename / delete, `y`+`p` duplicates, `x`+`p` reorders. In the expression,
+  one operand per row: `a` adds a tag (or var) below the cursor, `r` replaces, `d` deletes, `!` toggles not, `~`
+  cycles `+ & ^`, `y`/`x`+`p` copy / move rows (also into another entry). Counts show how many items match.
+  `u` `C-r` undo and redo editor changes only.
+- Renaming or moving a tag in romeli updates the views that use it (and `u` reverts both). A reference to a tag that
+  no longer exists stays, matches nothing, and shows as *missing*.
+- Views are stored on this device only (`storage.local`, no size limits). Settings → *views* has them as text
+  (the format above) for backup and sharing.
 
 ### Theme
 
