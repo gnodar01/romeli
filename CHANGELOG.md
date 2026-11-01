@@ -5,6 +5,47 @@ versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.4.0]
+
+### Added
+
+- **Views.** A view is a saved boolean filter over your tags. Views can be opened as a read-only romeli tab.
+  Views are composed of tags and **vars**, which are named, reusable tag expressions. They are the only means of grouping
+  boolean expressions, as grouping by parenthesis is not supported.
+  Expressions use the following operators, listed in precedence order: `!` (not), `&` (and), `^` (xor), `+` (or).
+  Expressions are evaluated left to right, and tags include their subtags.
+  - A view shows only its filtered matches, with empty folders pruned. Note an expression like (`!tech/`) would match the
+    whole tree, minus the `tech/` tag.
+  - `T` lists existing views. Find, filter, select works as in the main browser. `Enter` / `o` opens the selected ones as tabs.
+    View tabs are read-only. Yanking works and `g.` jumps to an item's primary tag in a normal tab.
+  - `K` opens the view editor. It contains two tabs, one for editing the viewset (set of views) and one for the varset (set of vars).
+    `[` and `]` navigates between them.
+  - The varset contains all vars on the lefthand side, and the highlighted var's expression (tagsexpr) on the right side.
+    `h` and `l` navigates between them. `a` adds new tags to the expression. `r` renames the highlighted one to a new tag.
+    `d` removes it. `x`/`p` cuts and pastes below the cursor location (note that order matters in expressions). `!` will toggle the not operator.
+    `~` will cycle between the `&`, `^`, `+` operators.
+  - The viewset contains all views on the lefthand side, and the highlighted view's expression (varsexpr) on the right side.
+    It operates the same as the varset editor with one addition. Your are able to add `{<varname>}` in addition to tags.
+    `<varname>` must match the name of a var in the varset.
+  - Renaming or moving a tag updates the views that reference it. References to tags that no longer exist are kept, match nothing, and show as *missing*.
+  - Views are stored per device in `storage.local` (browser's local storage). Settings -> *views* shows them as text for backup and sharing.
+    The text uses a custom DSL, that is easy to understand. Add a few vars and views and look at the setting text to understand its format.
+  - The new keys: `T`, `K`, `g.`, and in the editor `!` and `~` are all remappable. There are new theme roles for the editor's operators, negation,
+    and `{var}` references.
+
+### Changed
+
+- `~` no longer opens the key reference pane (it cycles operators in the view editor). Use `?` or `F1`.
+- Long box titles end in `…` instead of wrapping over the content, and prompt and picker inputs grow to wrap a long
+  query so the whole tag path stays visible.
+- Picker labels use the row's full width, and the selected row wraps to show its whole label.
+- Settings: focused key and theme rows show their JSON name (action, role, `font`…) in the comment color, instead
+  of role rows always showing their `--role` name. Parenthesized notes in labels use the comment color too.
+
+### Fixed
+
+- Closing a tab with `C-c` could freeze romeli.
+
 ## [0.3.1] - 2026-10-27
 
 ### Fixed
