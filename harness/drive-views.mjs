@@ -242,6 +242,24 @@ const commentColors = await page.$$eval('label[for="key-cycleOp"] .comment, labe
 console.log('9 comment colors:', commentColors);
 check(commentColors.length === 2 && commentColors[0] !== commentColors[1], '(view editor only) is in the comment color');
 
+// 10. options: a focused row shows its JSON key (comment color), others don't; theme roles too
+const keyShown = (id) =>
+  page.$eval(`label[for="${id}"]`, (l) => {
+    const k = l.querySelector('.json-key');
+    return { shown: getComputedStyle(k).display !== 'none', text: k.textContent, overflow: l.scrollWidth > l.clientWidth + 1 };
+  });
+check(!(await keyShown('key-goPrimary')).shown && !(await keyShown('role-tag')).shown, 'JSON keys are hidden on unfocused rows');
+await page.focus('#key-goPrimary'); await sleep(100);
+const focusedKey = await keyShown('key-goPrimary');
+console.log('10 focused key row:', focusedKey);
+check(focusedKey.shown && focusedKey.text === 'goPrimary' && !focusedKey.overflow, 'a focused key row shows its action name without overflowing');
+await page.focus('#role-tag-primary'); await sleep(100);
+const focusedRole = await keyShown('role-tag-primary');
+console.log('10 focused role row:', focusedRole);
+check(focusedRole.shown && focusedRole.text === 'tag-primary' && !focusedRole.overflow, 'a focused role row shows its JSON key');
+check(!(await page.evaluate(() => document.body.innerText.includes('--tag'))), 'roles no longer show --role names');
+await shot('49-options-json-key');
+
 if (errors.length) console.log('page errors:', errors);
 done(errors);
 await browser.close();
