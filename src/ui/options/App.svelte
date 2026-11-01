@@ -278,7 +278,8 @@
         {@const keys = bound(a)}
         <div class="row" class:custom={!!settings.bindings[a]}>
           <label class="desc" for="key-{a}"
-            >{#each descriptionParts(describe(a)) as p}{#if p.comment}<span class="comment">{p.text}</span>{:else}{p.text}{/if}{/each}</label
+            >{#each descriptionParts(describe(a)) as p}{#if p.comment}<span class="comment">{p.text}</span>{:else}{p.text}{/if}{/each}
+            <span class="json-key">{a}</span></label
           >
           <input
             id="key-{a}"
@@ -438,6 +439,15 @@
     }
     .desc .comment {
       color: var(--dim);
+    }
+    /* The row's key in the JSON below, shown while the row is focused (it wraps rather than overflows). */
+    .json-key {
+      display: none;
+      color: var(--dim);
+      overflow-wrap: anywhere;
+    }
+    .row:focus-within .json-key {
+      display: inline;
     }
     .key {
       color: var(--accent);

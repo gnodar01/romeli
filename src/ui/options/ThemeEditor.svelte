@@ -150,7 +150,7 @@
 
   <h2>font</h2>
   <div class="row" class:custom={!!theme.font}>
-    <label class="desc" for="font">font family <span class="dim">(CSS list)</span></label>
+    <label class="desc" for="font">font family <span class="dim">(CSS list)</span> <span class="json-key">font</span></label>
     <input
       id="font"
       class="key wide"
@@ -160,12 +160,12 @@
     />
   </div>
   <div class="row" class:custom={theme.fontSize !== undefined}>
-    <label class="desc" for="font-size">font size (px)</label>
+    <label class="desc" for="font-size">font size (px) <span class="json-key">fontSize</span></label>
     <input id="font-size" class="key" type="number" min="8" max="32" value={theme.fontSize ?? DEFAULT_FONT_SIZE} onchange={(e) => setNumber('fontSize', e.currentTarget.value)} />
     <span></span>
   </div>
   <div class="row" class:custom={theme.row !== undefined}>
-    <label class="desc" for="row-height">row height (px)</label>
+    <label class="desc" for="row-height">row height (px) <span class="json-key">row</span></label>
     <input id="row-height" class="key" type="number" min="12" max="48" value={theme.row ?? DEFAULT_ROW} onchange={(e) => setNumber('row', e.currentTarget.value)} />
     <span></span>
   </div>
@@ -200,7 +200,7 @@
       {#each shown as [k, d] (k)}
         {@const key = k as RoleKey}
         <div class="row color" class:custom={!!theme.roles?.[key]}>
-          <label class="desc" for="role-{k}">{d.label} <span class="dim">--{k}</span></label>
+          <label class="desc" for="role-{k}">{d.label} <span class="json-key">{k}</span></label>
           <input
             type="color"
             tabindex="-1"
