@@ -123,6 +123,18 @@ await page.evaluate(async (name) => {
 await sleep(400);
 await press('a'); await sleep(150); await type('CSCI'); await press('Enter'); await sleep(200);
 check((await exprRows())[2]?.includes('CSCI E-26'), 'the long tag is added');
+const cols = () => page.$$eval('.editor .col', (cs) => cs.map((c) => Math.round(c.getBoundingClientRect().left)));
+const rowGeo = (sel) => page.$eval(sel, (r) => ({ h: r.offsetHeight, name: r.querySelector('.name').scrollWidth > r.querySelector('.name').clientWidth }));
+const longCursor = await rowGeo('.editor .col:last-child .row.cursor');
+console.log('4 long row (cursor):', longCursor, await cols());
+check((await cols())[0] === 0, 'a long expression row does not push the list column away');
+check(longCursor.h > 30 && !longCursor.name, 'the long row wraps on the cursor');
+await shot('47a-long-row-cursor');
+await press('k');
+const longOther = await rowGeo('.editor .col:last-child .row:nth-child(3)');
+check(longOther.h <= 22 && longOther.name, 'off the cursor it ends in …');
+await shot('47-long-row');
+await press('j');
 await press('r'); await sleep(200);
 const geo = await page.evaluate(() => {
   const title = document.querySelector('.picker .box-title');

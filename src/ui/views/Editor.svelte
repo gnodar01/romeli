@@ -541,7 +541,7 @@
   }
   main {
     display: grid;
-    grid-template-columns: 1fr 2fr;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
     min-height: 0;
     border-top: 1px solid var(--divider);
     border-bottom: 1px solid var(--divider);
@@ -549,6 +549,7 @@
   .col {
     display: grid;
     grid-template-rows: var(--row) 1fr;
+    grid-template-columns: minmax(0, 1fr);
     min-width: 0;
     min-height: 0;
   }
@@ -557,6 +558,9 @@
   }
   .title {
     padding: 0 9px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
     color: var(--dim);
     border-bottom: 1px solid var(--divider);
   }

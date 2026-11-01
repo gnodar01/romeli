@@ -3,7 +3,9 @@
 
   /**
    * A cursor/selection list with the browser column's look (mark bar, cursor colors), for rows
-   * that aren't bookmarks: the views dialog and the view editor. `row` renders a row's content.
+   * that aren't bookmarks: the views dialog and the view editor. `row` renders a row's content;
+   * its `.name` ends in … when too long, except on the cursor row, where it wraps with a hanging
+   * indent.
    */
   let {
     rows,
@@ -83,6 +85,19 @@
   }
   .row.cursor {
     background: var(--line-bg);
+    height: auto;
+    min-height: var(--row);
+    align-items: flex-start;
+  }
+  .row :global(.name) {
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .row.cursor :global(.name) {
+    white-space: normal;
+    overflow-wrap: anywhere;
+    padding-left: 2ch;
+    text-indent: -2ch;
   }
   .active .row.cursor {
     background: var(--cursor-tag-bg);
