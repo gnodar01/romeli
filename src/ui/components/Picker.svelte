@@ -127,8 +127,19 @@
     overflow: hidden;
     text-overflow: ellipsis;
   }
+  /* The selected row shows its whole label, continuation lines indented. */
+  .row.sel .label {
+    white-space: normal;
+    overflow-wrap: anywhere;
+    padding-left: 2ch;
+    text-indent: -2ch;
+  }
+  .row.sel {
+    align-items: flex-start;
+  }
   .sub {
-    flex: 0 1 45%;
+    flex: 0 0 auto;
+    max-width: 45%;
     min-width: 0;
     overflow: hidden;
     text-overflow: ellipsis;

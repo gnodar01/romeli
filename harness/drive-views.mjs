@@ -121,7 +121,16 @@ await page.evaluate(async (name) => {
   await b.bookmarks.create({ parentId: g.id, title: 'CSCI E-26 syllabus', url: 'https://example.edu/cscie26' });
 }, LONG);
 await sleep(400);
-await press('a'); await sleep(150); await type('CSCI'); await press('Enter'); await sleep(200);
+await press('a'); await sleep(150); await type('CSCI');
+const pick = await page.$eval('.picker .row.sel', (r) => {
+  const label = r.querySelector('.label'), sub = r.querySelector('.sub');
+  return { h: r.offsetHeight, cut: label.scrollWidth > label.clientWidth, gap: sub.getBoundingClientRect().left - label.getBoundingClientRect().right };
+});
+console.log('4 picker selected row:', pick);
+check(pick.h > 30 && !pick.cut, 'the selected picker row wraps instead of ending in …');
+check(pick.gap < 20, 'no blank space between the label and its count');
+await shot('48-picker-long');
+await press('Enter'); await sleep(200);
 check((await exprRows())[2]?.includes('CSCI E-26'), 'the long tag is added');
 const cols = () => page.$$eval('.editor .col', (cs) => cs.map((c) => Math.round(c.getBoundingClientRect().left)));
 const rowGeo = (sel) => page.$eval(sel, (r) => ({ h: r.offsetHeight, name: r.querySelector('.name').scrollWidth > r.querySelector('.name').clientWidth }));
