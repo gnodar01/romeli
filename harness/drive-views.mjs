@@ -71,6 +71,16 @@ await press('/'); await type('linux'); await press('Enter'); await press('l'); a
 console.log('3 linux stuff / linux:', await rows());
 check((await rows()).some((r) => r.includes('terminal')) && !(await rows()).some((r) => r.includes('kernel')), 'linux stuff hides linux/kernel/');
 
+// C-c closes the active tab, also the last one, and keys keep working
+await press('3'); await press('c', 'Control'); await sleep(150);
+const afterClose = await all('header .tab');
+console.log('3 after C-c:', afterClose);
+check(afterClose.length === 2 && (await page.$eval('header .tab.active', (e) => e.textContent)).startsWith('2'), 'C-c closes the last tab and activates the previous one');
+await press('1'); await press('2'); await press('c', 'Control'); await sleep(150);
+check((await all('header .tab')).length === 1, 'C-c closes a tab in the middle');
+await press('j'); await press('k');
+check(!!(await text('header .path')), 'browser still responds after closing tabs');
+
 // 4. K: the editor
 await press('1');
 await press('K'); await sleep(200);
