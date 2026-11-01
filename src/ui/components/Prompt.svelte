@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount, untrack } from 'svelte';
+  import WrapInput from './WrapInput.svelte';
 
   let {
     title,
@@ -18,7 +19,7 @@
   } = $props();
 
   let v = $state(untrack(() => value));
-  let input = $state<HTMLInputElement>();
+  let input = $state<HTMLTextAreaElement>();
 
   onMount(() => {
     input?.focus();
@@ -44,7 +45,7 @@
 <div class="overlay-backdrop">
   <div class="box prompt">
     <span class="box-title">{title}</span>
-    <input bind:this={input} bind:value={v} spellcheck="false" {onkeydown} oninput={() => onInput?.(v)} />
+    <WrapInput bind:el={input} bind:value={v} {onkeydown} oninput={() => onInput?.(v)} />
     {#if hint}<div class="dim hint">{hint}</div>{/if}
   </div>
 </div>

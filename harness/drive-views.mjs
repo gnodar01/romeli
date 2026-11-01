@@ -111,6 +111,31 @@ await press('u'); await sleep(200);
 check((await exprRows())[1] === '& linux/kernel/ 1', 'u undoes the !');
 await press('r', 'Control'); await sleep(200);
 check((await exprRows())[1] === '& ! linux/kernel/ 1', 'C-r redoes it');
+// a long tag path: the picker title ends in …, the query wraps below it
+const LONG = 'Intro to C and Unix|Linux Programming and Web Interfaces | CSCI E-26';
+await page.evaluate(async (name) => {
+  const b = window.browser ?? window.chrome;
+  const cloud = [...window.__api.nodes.values()].find((n) => n.title === 'cloud' && !n.url);
+  const f = await b.bookmarks.create({ parentId: cloud.id, title: 'fall 2017 courses' });
+  const g = await b.bookmarks.create({ parentId: f.id, title: name });
+  await b.bookmarks.create({ parentId: g.id, title: 'CSCI E-26 syllabus', url: 'https://example.edu/cscie26' });
+}, LONG);
+await sleep(400);
+await press('a'); await sleep(150); await type('CSCI'); await press('Enter'); await sleep(200);
+check((await exprRows())[2]?.includes('CSCI E-26'), 'the long tag is added');
+await press('r'); await sleep(200);
+const geo = await page.evaluate(() => {
+  const title = document.querySelector('.picker .box-title');
+  const q = document.querySelector('.picker textarea');
+  const row = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--row'));
+  return { row, titleH: title.offsetHeight, truncated: title.scrollWidth > title.clientWidth, titleBottom: title.getBoundingClientRect().bottom, qTop: q.getBoundingClientRect().top, qH: q.clientHeight, qText: q.value };
+});
+console.log('4 replace picker:', geo);
+check(geo.truncated && geo.titleH <= geo.row, 'a long picker title stays on one line, ending in …');
+check(geo.qH > geo.row * 1.5 && geo.titleBottom <= geo.qTop + 1, 'the long query wraps below the title, not under it');
+await shot('46-replace-long');
+await press('Escape');
+
 // a parent of linux/kernel/ asks to replace it
 await press('a'); await sleep(150); await type('linux/'); await press('Enter'); await sleep(200);
 console.log('4 confirm:', await text('.confirm'));
@@ -191,5 +216,6 @@ await sleep(300);
 check((await all('.error-line')).some((n) => n.startsWith('line 2')), 'import reports problems by line and does not apply');
 await shot('45-options-views');
 
+if (errors.length) console.log('page errors:', errors);
 done(errors);
 await browser.close();

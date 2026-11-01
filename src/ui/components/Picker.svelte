@@ -2,6 +2,7 @@
   import { onMount, untrack } from 'svelte';
   import type { PickerRow } from '../browser/view';
   import Highlight from './Highlight.svelte';
+  import WrapInput from './WrapInput.svelte';
 
   let {
     title,
@@ -25,11 +26,14 @@
 
   let q = $state(untrack(() => value));
   let sel = $state(0);
-  let input = $state<HTMLInputElement>();
+  let input = $state<HTMLTextAreaElement>();
   let list = $state<HTMLElement>();
   const rows = $derived(search(q).slice(0, 200));
 
-  onMount(() => input?.focus());
+  onMount(() => {
+    input?.focus();
+    input?.setSelectionRange(q.length, q.length);
+  });
 
   $effect(() => {
     if (sel >= rows.length) sel = Math.max(0, rows.length - 1);
@@ -63,7 +67,7 @@
     <span class="box-title">{title}</span>
     <div class="query">
       <span class="prompt">❯</span>
-      <input bind:this={input} bind:value={q} {placeholder} spellcheck="false" oninput={() => (sel = 0)} {onkeydown} />
+      <WrapInput bind:el={input} bind:value={q} {placeholder} oninput={() => (sel = 0)} {onkeydown} />
       <span class="dim count">{rows.length}</span>
     </div>
     <div class="rows scroll" bind:this={list}>
@@ -87,6 +91,7 @@
   }
   .query {
     display: flex;
+    align-items: flex-start;
     gap: 8px;
     border-bottom: 1px solid var(--divider);
     padding-bottom: 4px;

@@ -56,6 +56,11 @@ input {
   background: inherit;
   color: var(--accent);
   line-height: calc(var(--row) - 2px);
+  /* Long titles (a tag path) end in … rather than wrapping over the box's content. */
+  max-width: calc(100% - 20px);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .overlay-backdrop {
