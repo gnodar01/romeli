@@ -666,9 +666,15 @@
       case 'tabNew':
         return openTab(e?.kind === 'tag' ? e.tag.path : cur.path, tab.view);
       case 'tabClose':
+      {
         if (tabs.length === 1) return window.close();
-        tabs.splice(ti, 1);
-        return switchTab(Math.min(ti, tabs.length - 1));
+        // Move off the tab before removing it: `tab` (and its nav) must never point past the end.
+        const closing = ti;
+        nav.commitVisual();
+        ti = Math.min(closing, tabs.length - 2);
+        tabs.splice(closing, 1);
+        return;
+      }
       case 'tabPrev':
         return switchTab((ti - 1 + tabs.length) % tabs.length);
       case 'tabNext':
