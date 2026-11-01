@@ -237,6 +237,11 @@ await sleep(300);
 check((await all('.error-line')).some((n) => n.startsWith('line 2')), 'import reports problems by line and does not apply');
 await shot('45-options-views');
 
+// 9. options: comments in key descriptions use the comment color
+const commentColors = await page.$$eval('label[for="key-cycleOp"] .comment, label[for="key-cycleOp"]', (els) => els.map((e) => getComputedStyle(e).color));
+console.log('9 comment colors:', commentColors);
+check(commentColors.length === 2 && commentColors[0] !== commentColors[1], '(view editor only) is in the comment color');
+
 if (errors.length) console.log('page errors:', errors);
 done(errors);
 await browser.close();
