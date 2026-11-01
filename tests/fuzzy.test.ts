@@ -72,12 +72,20 @@ describe('tag completion (the create-bookmark walkthrough)', async () => {
   });
 });
 
-import { ACTIONS, ACTION_GROUPS, DEFAULT_BINDINGS } from '../src/core/keymap';
+import { ACTIONS, ACTION_GROUPS, DEFAULT_BINDINGS, bindingsFor, parseKeys, screenHas, type Action, type Screen } from '../src/core/keymap';
 describe('keymap', () => {
-  it('groups every action exactly once and binds no key twice', () => {
+  const SCREENS: Screen[] = ['main', 'viewTab', 'dialog', 'editorList', 'editorExpr'];
+
+  it('groups every action exactly once, each usable on some screen', () => {
     const grouped = ACTION_GROUPS.flatMap(([, a]) => a);
     expect([...grouped].sort()).toEqual(Object.keys(ACTIONS).sort());
-    const keys = Object.values(DEFAULT_BINDINGS).flat();
+    for (const a of Object.keys(ACTIONS) as Action[]) expect(SCREENS.some((s) => screenHas(s, a)), a).toBe(true);
+  });
+
+  it.each(SCREENS)('binds no key twice on %s, and no binding is a prefix of another', (screen) => {
+    const keys = Object.values(bindingsFor(DEFAULT_BINDINGS, screen)).flat();
     expect(keys.length).toBe(new Set(keys).size);
+    const seqs = keys.map((k) => parseKeys(k).join(' '));
+    for (const a of seqs) for (const b of seqs) if (a !== b) expect(b.startsWith(a + ' '), `${a} shadows ${b}`).toBe(false);
   });
 });

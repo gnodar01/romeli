@@ -20,6 +20,8 @@
     type Theme,
   } from '../../core/theme';
 
+  import TextIO from './TextIO.svelte';
+
   let { flash }: { flash: (text: string, error?: boolean) => void } = $props();
 
   let theme = $state.raw<Theme>({});
@@ -80,11 +82,6 @@
     }
     const { theme: next, problems } = sanitizeTheme(raw, isCssColor);
     void commit(next, 'theme imported').then(() => problems.length && flash(`imported, ignoring: ${problems.join('; ')}`, true));
-  }
-
-  async function copyJson() {
-    await navigator.clipboard.writeText(json);
-    flash('theme JSON copied');
   }
 
   const roleShown = (k: string, label: string) => {
@@ -227,12 +224,7 @@
 
   <h2>JSON</h2>
   <p class="dim">The whole theme, for sharing or backup. Edit or paste, then apply; omitted keys fall back to the defaults.</p>
-  <textarea class="json scroll" bind:value={json} spellcheck="false" rows="12"></textarea>
-  <div class="toolbar">
-    <button onclick={importJson}>apply JSON</button>
-    <button onclick={copyJson}>copy</button>
-    <button onclick={() => (json = fmt(theme))}>revert</button>
-  </div>
+  <TextIO bind:value={json} what="theme JSON" onApply={importJson} onRevert={() => (json = fmt(theme))} {flash} />
 </section>
 
 <style>

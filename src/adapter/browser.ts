@@ -1,5 +1,6 @@
 import { OrderStore } from '../core/order';
 import { Store } from '../core/store';
+import { ViewStore } from '../core/views/store';
 import type { BookmarksApi, KVStore } from '../core/types';
 import { mergeBindings, type Bindings } from '../core/keymap';
 import { sanitizeTheme, themeCss, type Theme } from '../core/theme';
@@ -22,8 +23,20 @@ export const syncKV: KVStore = {
   remove: (keys) => ext.storage.sync.remove(keys),
 };
 
-export function createStore(): Store {
-  return new Store(bookmarksApi, new OrderStore(syncKV), platform.resolveRoots);
+export const localKV: KVStore = {
+  get: (keys) => ext.storage.local.get(keys) as Promise<Record<string, unknown>>,
+  set: (items) => ext.storage.local.set(items),
+  remove: (keys) => ext.storage.local.remove(keys),
+};
+
+/** Views live in storage.local: they can outgrow storage.sync's quota (so they stay on this device). */
+export function createViewStore(): ViewStore {
+  return new ViewStore(localKV);
+}
+
+/** Pass the view store so that renaming or moving a tag rewrites the views that reference it. */
+export function createStore(views?: ViewStore): Store {
+  return new Store(bookmarksApi, new OrderStore(syncKV), platform.resolveRoots, views);
 }
 
 // ------------------------------------------------------------------ settings

@@ -6,8 +6,8 @@ export const ACTIONS = {
   // navigation
   up: 'Move cursor up',
   down: 'Move cursor down',
-  parent: 'Go to parent tag',
-  enter: 'Enter tag / open item',
+  parent: 'Go to parent tag (view editor: back to the list)',
+  enter: 'Enter tag / open item (view editor: edit the expression)',
   top: 'Go to top',
   bottom: 'Go to bottom',
   halfUp: 'Half page up',
@@ -22,7 +22,7 @@ export const ACTIONS = {
   prevTagLocation: "Go to the item's previous tag",
   nextTagLocation: "Go to the item's next tag",
   // opening
-  open: 'Open in current tab (on a tag: enter)',
+  open: 'Open in current tab (on a tag: enter; views dialog: open as tabs)',
   openNew: 'Open in new tab (on a tag: open all items)',
   // selection
   toggleSelect: 'Toggle selection and move down',
@@ -31,16 +31,16 @@ export const ACTIONS = {
   selectAll: 'Select all',
   invertSelection: 'Invert selection',
   // clipboard
-  yank: 'Yank (p adds a tag)',
+  yank: 'Yank (p adds a tag; view editor: p duplicates)',
   cut: 'Cut (p moves)',
-  paste: 'Paste into current tag',
+  paste: 'Paste into current tag (view editor: below the cursor)',
   pasteInto: 'Paste into hovered tag',
   cancelYank: 'Cancel yank/cut',
   // edits
-  delete: 'Delete copy / tag',
+  delete: 'Delete copy / tag (view editor: entries or rows)',
   deleteAll: 'Delete item everywhere',
-  create: 'Create (end with / for a tag)',
-  rename: 'Rename',
+  create: 'Create (end with / for a tag; view editor: add)',
+  rename: 'Rename (view editor rows: replace)',
   editTags: 'Edit tags of item',
   // search
   find: 'Find next (in column)',
@@ -65,8 +65,8 @@ export const ACTIONS = {
   // tabs
   tabNew: 'New tab',
   tabClose: 'Close tab',
-  tabPrev: 'Previous tab',
-  tabNext: 'Next tab',
+  tabPrev: 'Previous tab (view editor: viewset)',
+  tabNext: 'Next tab (view editor: varset)',
   tab1: 'Switch to tab 1',
   tab2: 'Switch to tab 2',
   tab3: 'Switch to tab 3',
@@ -80,12 +80,18 @@ export const ACTIONS = {
   copyUrl: 'Copy URL',
   copyTitle: 'Copy title',
   copyPath: 'Copy tag path',
+  // views
+  views: 'Open views (dialog)',
+  viewEditor: 'Edit views and vars',
+  goPrimary: "(view tabs only) Go to the item's primary tag",
+  toggleNot: '(view editor only) Toggle ! (not)',
+  cycleOp: '(view editor only) Cycle operator + & ^',
   // misc
   undo: 'Undo',
   redo: 'Redo',
   help: 'Show all keys',
   escape: 'Cancel / clear',
-  quit: 'Close romeli',
+  quit: 'Close romeli (views dialog, view editor: leave)',
 } as const;
 
 export type Action = keyof typeof ACTIONS;
@@ -104,9 +110,50 @@ export const ACTION_GROUPS: [string, Action[]][] = [
   ['view', ['sortAlpha', 'sortAlphaRev', 'sortCreated', 'sortCreatedRev', 'sortModified', 'sortModifiedRev', 'sortNative', 'sortNativeRev', 'toggleTagsFirst', 'toggleRecursive']],
   ['tabs', ['tabNew', 'tabClose', 'tabPrev', 'tabNext', 'tab1', 'tab2', 'tab3', 'tab4', 'tab5', 'tab6', 'tab7', 'tab8', 'tab9']],
   ['clipboard', ['copyUrl', 'copyTitle', 'copyPath']],
+  ['views', ['views', 'viewEditor', 'goPrimary', 'toggleNot', 'cycleOp']],
   ['misc', ['help', 'escape', 'quit']],
 ];
 export type Bindings = Record<Action, string[]>;
+
+/**
+ * Where keys are read: the main browser, a (read-only) view tab, the views dialog, and the view
+ * editor's list and expression columns. Each action has one binding list, shared by every screen
+ * it works in, so rebinding `j` moves it everywhere; keys only need to be unique per screen.
+ */
+export type Screen = 'main' | 'viewTab' | 'dialog' | 'editorList' | 'editorExpr';
+export const SCREENS: readonly Screen[] = ['main', 'viewTab', 'dialog', 'editorList', 'editorExpr'];
+
+/** Actions a view tab refuses: views are read-only (yank still works, to paste in a normal tab). */
+export const MUTATING: ReadonlySet<Action> = new Set<Action>([
+  'cut', 'paste', 'pasteInto', 'delete', 'deleteAll', 'create', 'rename', 'editTags', 'undo', 'redo',
+]);
+
+const EDITOR_ONLY: Action[] = ['toggleNot', 'cycleOp'];
+const LIST: Action[] = [
+  'up', 'down', 'top', 'bottom', 'halfUp', 'halfDown', 'pageUp', 'pageDown',
+  'toggleSelect', 'visual', 'visualUnset', 'selectAll', 'invertSelection',
+  'find', 'findPrev', 'findNext', 'findPrevMatch', 'filter', 'help', 'escape', 'quit',
+];
+const EDIT: Action[] = ['yank', 'cut', 'paste', 'cancelYank', 'delete', 'create', 'rename', 'undo', 'redo', 'tabPrev', 'tabNext'];
+
+const SCREEN_ACTIONS: Record<Screen, ReadonlySet<Action>> = (() => {
+  const all = Object.keys(ACTIONS) as Action[];
+  const main = all.filter((a) => a !== 'goPrimary' && !EDITOR_ONLY.includes(a));
+  return {
+    main: new Set(main),
+    viewTab: new Set([...main, 'goPrimary']),
+    dialog: new Set([...LIST, 'open']),
+    editorList: new Set([...LIST, ...EDIT, 'enter']),
+    editorExpr: new Set([...LIST, ...EDIT, 'parent', ...EDITOR_ONLY]),
+  };
+})();
+
+export const screenHas = (screen: Screen, a: Action): boolean => SCREEN_ACTIONS[screen].has(a);
+
+/** The bindings that apply on one screen. */
+export function bindingsFor(bindings: Bindings, screen: Screen): Partial<Bindings> {
+  return Object.fromEntries(Object.entries(bindings).filter(([a]) => SCREEN_ACTIONS[screen].has(a as Action)));
+}
 
 export const DEFAULT_BINDINGS: Bindings = {
   up: ['k', '<Up>'],
@@ -177,9 +224,14 @@ export const DEFAULT_BINDINGS: Bindings = {
   copyUrl: ['cc'],
   copyTitle: ['cn'],
   copyPath: ['ct'],
+  views: ['T'],
+  viewEditor: ['K'],
+  goPrimary: ['g.'],
+  toggleNot: ['!'],
+  cycleOp: ['~'],
   undo: ['u'],
   redo: ['<C-r>'],
-  help: ['?', '~', '<F1>'],
+  help: ['?', '<F1>'],
   escape: ['<Esc>'],
   quit: ['q'],
 };
@@ -329,7 +381,7 @@ export class KeyResolver {
   private prefixes = new Set<string>();
   private buf: string[] = [];
 
-  constructor(bindings: Bindings) {
+  constructor(bindings: Partial<Bindings>) {
     for (const [action, seqs] of Object.entries(bindings) as [Action, string[]][]) {
       for (const seq of seqs) {
         const keys = parseKeys(seq);

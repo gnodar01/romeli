@@ -1,9 +1,12 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { ACTION_GROUPS, describeAction, type Bindings } from '../../core/keymap';
+  import { ACTION_GROUPS, describeAction, screenHas, type Action, type Bindings, type Screen } from '../../core/keymap';
   import { platform } from '../../platform';
 
-  let { bindings, onClose }: { bindings: Bindings; onClose: () => void } = $props();
+  let { bindings, screens, onClose }: { bindings: Bindings; screens: Screen[]; onClose: () => void } = $props();
+
+  const shown = (a: Action) => !platform.hiddenActions.includes(a) && screens.some((s) => screenHas(s, a));
+  const groups = $derived(ACTION_GROUPS.map(([g, actions]) => [g, actions.filter(shown)] as const).filter(([, a]) => a.length));
 
   let body = $state<HTMLElement>();
   let lastG = 0;
@@ -50,7 +53,6 @@
       case 'Escape':
       case 'q':
       case '?':
-      case '~':
       case 'F1':
         e.preventDefault();
         return onClose();
@@ -63,10 +65,10 @@
     <span class="box-title">keys</span>
     <div class="body scroll" role="dialog" aria-label="keyboard shortcuts" tabindex="-1" bind:this={body} {onkeydown}>
       <div class="cols">
-      {#each ACTION_GROUPS as [group, actions]}
+      {#each groups as [group, actions]}
         <section>
           <div class="group">{group}</div>
-          {#each actions.filter((a) => !platform.hiddenActions.includes(a)) as a}
+          {#each actions as a}
             <div class="row">
               <span class="keys">
                 {#each bindings[a] as k}<span class="k">{k}</span>{:else}<span class="dim">—</span>{/each}

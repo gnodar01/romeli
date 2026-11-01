@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { createStore, DEFAULT_SETTINGS, loadSettings, saveSettings, type Settings } from '../../adapter/browser';
+  import { createStore, createViewStore, DEFAULT_SETTINGS, loadSettings, saveSettings, type Settings } from '../../adapter/browser';
   import {
     ACTIONS,
     DEFAULT_BINDINGS,
@@ -10,16 +10,20 @@
     fullBindings,
     platformWarnings,
     sanitizeBindings,
+    screenHas,
+    SCREENS,
     type Action,
   } from '../../core/keymap';
   import { normalizeName, plural } from '../../core/store';
   import { formatPath } from '../../core/tags';
   import { platform } from '../../platform';
   import { ext } from '../../platform/ext';
+  import TextIO from './TextIO.svelte';
   import ThemeEditor from './ThemeEditor.svelte';
+  import ViewsIO from './ViewsIO.svelte';
 
   const isMac = navigator.platform.toLowerCase().includes('mac');
-  const store = createStore();
+  const store = createStore(createViewStore());
 
   let settings = $state<Settings>(DEFAULT_SETTINGS);
   let commands = $state<browser.commands.Command[]>([]);
@@ -44,10 +48,12 @@
       return !q || a.toLowerCase().includes(q) || describe(a).toLowerCase().includes(q) || bound(a).join(' ').includes(filter);
     }),
   );
+  /** Keys bound to more than one action on the same screen (see `Screen`). */
   const conflicts = $derived.by(() => {
     const seen = new Map<string, Action[]>();
     for (const a of actions) for (const k of bound(a)) seen.set(k, [...(seen.get(k) ?? []), a]);
-    return new Map([...seen].filter(([, v]) => v.length > 1));
+    const clash = (as: Action[]) => SCREENS.some((s) => as.filter((a) => screenHas(s, a)).length > 1);
+    return new Map([...seen].filter(([, v]) => clash(v)));
   });
 
   async function loadBadTags() {
@@ -98,11 +104,6 @@
     const { bindings, problems } = sanitizeBindings(raw);
     await saveBindings(bindings, 'keys imported');
     importNotes = [...problems.map((p) => `ignored: ${p}`), ...platformWarnings(bindings, isMac)];
-  }
-
-  async function copyKeys() {
-    await navigator.clipboard.writeText(keysJson);
-    flash('keys JSON copied');
   }
 
   /** Record a single key press (e.g. <C-x>) and append it to the binding being edited. */
@@ -303,17 +304,16 @@
       keep their defaults. Moving between macOS and Windows/Linux: ⌘ keys (<code>&lt;D-…&gt;</code>) become the
       Windows/Super key, and a few Ctrl keys are taken by the browser there; applying warns about those.
     </p>
-    <textarea class="json scroll" bind:value={keysJson} spellcheck="false" rows="12"></textarea>
-    <div class="toolbar">
-      <button onclick={importKeys}>apply JSON</button>
-      <button onclick={copyKeys}>copy</button>
-      <button
-        onclick={() => {
-          keysJson = fmtKeys(settings.bindings);
-          importNotes = [];
-        }}>revert</button
-      >
-    </div>
+    <TextIO
+      bind:value={keysJson}
+      what="keys JSON"
+      onApply={importKeys}
+      onRevert={() => {
+        keysJson = fmtKeys(settings.bindings);
+        importNotes = [];
+      }}
+      {flash}
+    />
     {#each importNotes as n}<div class="conflict">{n}</div>{/each}
   </section>
 
@@ -353,6 +353,8 @@
       ask when romeli opens and finds either
     </label>
   </section>
+
+  <ViewsIO {flash} />
 
   <ThemeEditor {flash} />
 

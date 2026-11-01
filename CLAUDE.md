@@ -48,7 +48,21 @@ ImageMagick: `compare -metric AE before.png after.png /dev/null` prints 0 when t
   - `order.ts`: tag-order overrides stored in `storage.sync`, split into chunks of 2500 chars or fewer to stay under the per-item quota.
   - `complete.ts`: completion for the tag-list input. `fuzzy.ts`: an fzf-like matcher.
   - `keymap.ts`: actions, `ACTION_GROUPS` (help-pane sections), default bindings, and the multi-key `KeyResolver`.
+    Actions belong to `Screen`s (`main`, `viewTab`, `dialog`, `editorList`, `editorExpr`); each action has one
+    binding list shared by its screens, `bindingsFor(b, screen)` feeds a per-screen resolver, and keys must be
+    unique per screen. `MUTATING` actions are refused in view tabs. Screen-only actions say so in their
+    description ("(view editor only) …").
   - `undo.ts`: the undo/redo stack.
+  - `views/`: views and vars (saved boolean filters, see the README).
+    - `types.ts`: immutable `ViewDefs` (`Def` = id, name, flat `Term[]`). Tag refs are path keys; var refs are names.
+    - `eval.ts`: `ItemIndex` (items numbered per Model, lazily memoized subtree `Bitset`s, `indexOf` WeakMap) and
+      `Evaluator` (`evaluatorOf(model)`), memoized by `Def` identity, so an edit only re-evaluates the Defs it
+      replaced and a bookmark change (a new Model) starts fresh. `scopeOf` picks the tags a view is shown under.
+    - `project.ts`: `projectView` → a pruned read-only Model (same ids/paths) via the generic `Model.filtered`.
+    - `defs.ts`: pure edits (every edit keeps unchanged Defs' identity). `dsl.ts`: the text import/export.
+    - `store.ts`: `ViewStore` over a `KVStore` (storage.local key `views`), undo entries that restore only the Defs an
+      op changed (`patchDefs`). It's the bookmark `Store`'s `TagRefs` hook: tag renames/moves/normalization call
+      `rewriteTags` alongside the order overrides.
   - `theme.ts`: palette (`PALETTE`), semantic roles (`ROLE_GROUPS`, each defaulting to a palette slot), presets, `sanitizeTheme`, and `themeCss`, which generates every color/font/row CSS variable (`--p-<slot>` for the palette, `--<role>` for roles). `color-scheme` (native scrollbars and dropdowns) is never a setting: `schemeOf` derives it from the brightness of the `bg` role.
 - `src/platform/`: **the only place for browser-gated code.**
   - `types.ts`: the `Platform` interface (root resolver, browser name, hidden actions, favicon source, whether
@@ -66,10 +80,17 @@ ImageMagick: `compare -metric AE before.png after.png /dev/null` prints 0 when t
   - handles the commands (`open-browser`, `create-bookmark`) and opens the browser and create windows as single-instance popups (ids kept in `storage.session`);
   - calls `platform.startBackground` (Firefox: captures favicons from tabs).
 - `src/ui/`: Svelte 5 (runes).
-  - `browser/App.svelte`: the main app. It holds state, the action dispatcher `exec()`, and the overlays.
+  - `browser/App.svelte`: the main app. It holds state, the action dispatcher `exec()`, tabs (a tab can show a
+    view: `shown` is then the projected Model), and switches to the view editor (`screen`).
+  - `lib/`: shared building blocks. `ListNav` (cursor, selection, visual, find, filter, and the list actions in
+    `exec`), `Overlays` + `OverlayHost.svelte` (prompt / confirm / picker / help as promises), `Flash`, `KeyFeed`
+    (key → resolver → which-key), `StatusBar.svelte`, `WhichKey.svelte`. New screens use these instead of copying
+    App's logic.
+  - `views/`: `ViewsDialog.svelte` (`T`) and `Editor.svelte` (`K`, with its own undo stack kept by App).
   - `browser/view.ts`: entry lists, sorting, stable entry keys, and shared UI types.
   - `create/`: the create/edit popup.
-  - `options/`: settings (keymap with its own JSON import/export, global shortcuts, folder-name normalization, `ThemeEditor.svelte`). App's styles sit in a `main :global { … }` block so child components like ThemeEditor share the row, input and button styles.
+  - `options/`: settings (keymap with its own JSON import/export, global shortcuts, folder-name normalization, `ThemeEditor.svelte`,
+    `ViewsIO.svelte` for the views text; `TextIO.svelte` is the shared textarea + apply/copy/revert). App's styles sit in a `main :global { … }` block so child components like ThemeEditor share the row, input and button styles.
   - `components/`: shared components.
   - `theme.css`: base styles only. Colors, font and row height come from the generated theme.
 - `harness/`: dev-only. `shim.ts` fakes the API (as `browser`, or as `chrome` with TARGET=chrome) using
@@ -95,6 +116,8 @@ ImageMagick: `compare -metric AE before.png after.png /dev/null` prints 0 when t
 - **Redundancy is collapsed:** adding a descendant tag replaces its ancestor in place, and adding an ancestor of an existing tag is a no-op with a warning.
 - **`d` vs `D`:** `d` on an item removes that one copy, and removing the last copy deletes the bookmark. `D` removes every copy.
 - **Deleting a tag** untags its items. Items left with no tags move to the root rather than being deleted.
+- **Views** reference tags by path and vars by name, never by id. They live in `storage.local` (per device), and a
+  view tab never mutates bookmarks.
 - **`y` vs `x`:** `y`+`p` adds a tag. `x`+`p` replaces the tag the copy was cut from, keeping its position. On tags, `y`+`p` copies the subtree and `x`+`p` moves the folder.
 - **Folder names must not contain `,` or `/`.** These separate entries in tag lists.
   - Romeli offers to normalize offending names (`,`→`;`, `/`→`|`); the "ask" flag is `settings.askNormalize`.
@@ -200,4 +223,6 @@ ImageMagick: `compare -metric AE before.png after.png /dev/null` prints 0 when t
 - `npm run start:chrome` shows an "unsupported command-line flag: --disable-blink-features=AutomationControlled" bar.
   It's added by web-ext and harmless. Passing `--args=--enable-blink-features=AutomationControlled` hides it, but then
   sites see `navigator.webdriver` and Google sign-in may refuse, so it's deliberately left alone.
+- Views (2026-10-31): evaluator, editor, dialog, view tabs and text import/export, verified through both harnesses
+  (`drive-views.mjs`) and unit tests (`tests/views.test.ts`). Not yet tried by the user in a real browser.
 - Check `git log` for history; the user commits their own work.

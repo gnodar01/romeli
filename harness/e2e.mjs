@@ -8,7 +8,7 @@ import { join } from 'node:path';
 
 const out = process.argv[2] ?? mkdtempSync(join(tmpdir(), 'romeli-e2e-'));
 const targets = process.argv.length > 3 ? process.argv.slice(3) : ['firefox', 'chrome'];
-const SCRIPTS = ['drive', 'drive-create', 'drive-features', 'drive-theme'];
+const SCRIPTS = ['drive', 'drive-create', 'drive-features', 'drive-theme', 'drive-views'];
 const port = (t) => (t === 'chrome' ? 5198 : 5199);
 
 const up = async (t) => {

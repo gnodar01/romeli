@@ -65,6 +65,24 @@ const kv = (area: string) => {
   };
 };
 
+// Views (storage.local) over the tree above; drive-views.mjs relies on these.
+const localArea = kv('local');
+const t = (tag: string, op = '+', not = false) => ({ op, not, ref: { tag } });
+const v = (name: string, op = '+', not = false) => ({ op, not, ref: { var: name } });
+await localArea.set({
+  views: {
+    v: 1,
+    vars: [
+      { id: 'v1', name: 'term_cli', expr: [t('linux/terminal'), t('tool/CLI', '&')] },
+      { id: 'v2', name: 'linuxy', expr: [t('linux'), t('linus')] },
+    ],
+    views: [
+      { id: 'w1', name: 'linux stuff', expr: [v('linuxy'), t('linux/kernel', '&', true)] },
+      { id: 'w2', name: 'cli', expr: [t('tool/CLI'), v('term_cli')] },
+    ],
+  },
+});
+
 const calls: unknown[] = [];
 (globalThis as any).__calls = calls;
 (globalThis as any).__api = api;
@@ -95,7 +113,7 @@ const ext = {
     onChanged,
     onMoved,
   },
-  storage: { sync: kv('sync'), local: kv('local'), session: kv('session'), onChanged: storageChanged },
+  storage: { sync: kv('sync'), local: localArea, session: kv('session'), onChanged: storageChanged },
   windows: {
     getLastFocused: async () => ({ id: 1, type: 'normal', tabs: [{ id: 10, windowId: 1, active: true, url: 'about:blank' }] }),
     getAll: async () => [],

@@ -76,6 +76,9 @@ export const ROLE_GROUPS = {
     key: role('key names (help, which-key hints)', 'yellow'),
     'whichkey-key': role('which-key keys', 'pink'),
     'whichkey-border': role('which-key top border', 'purple'),
+    'expr-op': role('(view editor only) operators + & ^', 'pink'),
+    'expr-not': role('(view editor only) negation !', 'red'),
+    'var-ref': role('(view editor only) {var} references', 'green'),
   },
   status: {
     'mode-fg': role('mode pill text', 'bg'),
