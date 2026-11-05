@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount, untrack } from 'svelte';
   import { parseTagInput } from '../../core/complete';
+  import type { Bindings } from '../../core/keymap';
   import type { Model } from '../../core/model';
   import { formatPath, normalizeTags } from '../../core/tags';
   import type { TagPath } from '../../core/types';
@@ -14,6 +15,7 @@
     tags: initialTags = '',
     focus = 'tags',
     favicon,
+    bindings,
     onSave,
     onCancel,
   }: {
@@ -24,6 +26,7 @@
     tags?: string;
     focus?: 'tags' | 'title' | 'url';
     favicon?: string;
+    bindings: Bindings;
     onSave: (url: string, title: string, tags: TagPath[]) => Promise<void>;
     onCancel: () => void;
   } = $props();
@@ -104,7 +107,7 @@
   </label>
   <div class="field">
     <span class="label">tags</span>
-    <TagInput {model} bind:value={tags} bind:input={tagsEl} />
+    <TagInput {model} {bindings} bind:value={tags} bind:input={tagsEl} />
   </div>
   <div class="chips">
     {#each parsed as t, i}

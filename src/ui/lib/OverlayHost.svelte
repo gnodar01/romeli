@@ -21,6 +21,8 @@
     placeholder={o.placeholder}
     hint={o.hint}
     search={o.search}
+    {bindings}
+    deleteBack={o.deleteBack}
     onPick={(act, alt) => {
       overlays.close();
       (alt && act.alt ? act.alt : act.go)();

@@ -145,6 +145,37 @@ await shot('07-jump');
 await keys('Enter');
 log('jumped:', await text('header'));
 
+// tag search: Tab completes the query to the highlighted row and keeps it highlighted
+await keys('S');
+await type('kern');
+await keys('Control+n');
+const picked = await text('.picker .row.sel .label');
+await keys('Tab');
+const q = await page.$eval('.picker textarea', (t) => t.value);
+const still = await text('.picker .row.sel .label');
+check(picked && q === picked && still === picked, `Tab completes to the highlighted row: ${JSON.stringify({ picked, q, still })}`);
+const query = () => page.$eval('.picker textarea', (t) => t.value);
+await keys('Control+w');
+const w1 = await query();
+await keys('Control+w');
+const w2 = await query();
+check(w1 === 'linux/' && w2 === '', `C-w strips one tag at a time: ${JSON.stringify([w1, w2])}`);
+await keys('Escape');
+
+// jump: C-w strips the item's title (even with '/' in it), then each tag
+await keys('z');
+await type('Archives');
+for (let i = 0; i < 10 && !(await page.$('.picker .row.item.sel')); i++) await keys('Control+n');
+const itemLabel = await text('.picker .row.item.sel .label');
+await keys('Tab');
+await type(' a/b');
+await keys('Control+w');
+const j1 = await query();
+await keys('Control+w');
+const j2 = await query();
+check(itemLabel.startsWith('linux/kernel/') && j1 === 'linux/kernel/' && j2 === 'linux/', `jump C-w: ${JSON.stringify({ itemLabel, j1, j2 })}`);
+await keys('Escape');
+
 // open with o and O
 await keys('g', 'g', 'o');
 await keys('O');

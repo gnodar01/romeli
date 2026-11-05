@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { applyCompletion, complete, parseTagInput } from '../src/core/complete';
+import { applyCompletion, complete, deleteBackSegment, deleteBackTag, parseTagInput } from '../src/core/complete';
 import { fuzzyFilter, fuzzyMatch } from '../src/core/fuzzy';
 import { setup } from './mock';
 
@@ -72,10 +72,8 @@ describe('tag completion (the create-bookmark walkthrough)', async () => {
   });
 });
 
-import { ACTIONS, ACTION_GROUPS, DEFAULT_BINDINGS, bindingsFor, parseKeys, screenHas, type Action, type Screen } from '../src/core/keymap';
+import { ACTIONS, ACTION_GROUPS, DEFAULT_BINDINGS, SCREENS, bindingsFor, inputAction, mergeBindings, parseKeys, screenHas, type Action } from '../src/core/keymap';
 describe('keymap', () => {
-  const SCREENS: Screen[] = ['main', 'viewTab', 'dialog', 'editorList', 'editorExpr'];
-
   it('groups every action exactly once, each usable on some screen', () => {
     const grouped = ACTION_GROUPS.flatMap(([, a]) => a);
     expect([...grouped].sort()).toEqual(Object.keys(ACTIONS).sort());
@@ -87,5 +85,38 @@ describe('keymap', () => {
     expect(keys.length).toBe(new Set(keys).size);
     const seqs = keys.map((k) => parseKeys(k).join(' '));
     for (const a of seqs) for (const b of seqs) if (a !== b) expect(b.startsWith(a + ' '), `${a} shadows ${b}`).toBe(false);
+  });
+
+  it('maps single key presses to text-input actions, following overrides', () => {
+    const ev = (key: string, mods: { ctrlKey?: boolean; shiftKey?: boolean } = {}) => ({ key, ctrlKey: false, altKey: false, metaKey: false, shiftKey: false, ...mods });
+    expect(inputAction(DEFAULT_BINDINGS, ev('Tab'))).toBe('complete');
+    expect(inputAction(DEFAULT_BINDINGS, ev('Tab', { shiftKey: true }))).toBe(null);
+    expect(inputAction(DEFAULT_BINDINGS, ev('w', { ctrlKey: true }))).toBe('deleteBack');
+    const b = mergeBindings({ complete: ['<C-l>'], deleteBack: ['<C-h>', 'gg'] });
+    expect(inputAction(b, ev('Tab'))).toBe(null);
+    expect(inputAction(b, ev('l', { ctrlKey: true }))).toBe('complete');
+    expect(inputAction(b, ev('h', { ctrlKey: true }))).toBe('deleteBack');
+    expect(inputAction(b, ev('g'))).toBe(null);
+  });
+});
+
+describe('delete back (C-w)', () => {
+  it('drops the last segment in the tags field', () => {
+    expect(deleteBackSegment('media/blogs/')).toBe('media/');
+    expect(deleteBackSegment('media/bl')).toBe('media/');
+    expect(deleteBackSegment('a/b/, c')).toBe('a/b/,');
+    expect(deleteBackSegment('a/')).toBe('');
+  });
+
+  it('strips text after the last tag first, then one tag at a time', () => {
+    const tags = new Set(['linux/', 'linux/kernel/']);
+    const isTag = (p: string) => tags.has(p);
+    expect(deleteBackTag('linux/kernel/My a/b title', isTag)).toBe('linux/kernel/');
+    expect(deleteBackTag('linux/kernel/', isTag)).toBe('linux/');
+    expect(deleteBackTag('linux/ker', isTag)).toBe('linux/');
+    expect(deleteBackTag('linux/', isTag)).toBe('');
+    expect(deleteBackTag('kern', isTag)).toBe('');
+    expect(deleteBackTag('/x', isTag)).toBe('');
+    expect(deleteBackTag('', isTag)).toBe('');
   });
 });

@@ -86,6 +86,9 @@ export const ACTIONS = {
   goPrimary: "Go to the item's primary tag (view tabs only)",
   toggleNot: 'Toggle ! (not) (view editor only)',
   cycleOp: 'Cycle operator + & ^ (or, and, xor) (view editor only)',
+  // text input (search boxes, the tags field)
+  complete: 'Complete with the highlighted suggestion (search boxes, tags field)',
+  deleteBack: 'Delete back to the previous tag; in jump, the item first (search boxes, tags field)',
   // misc
   undo: 'Undo',
   redo: 'Redo',
@@ -111,6 +114,7 @@ export const ACTION_GROUPS: [string, Action[]][] = [
   ['tabs', ['tabNew', 'tabClose', 'tabPrev', 'tabNext', 'tab1', 'tab2', 'tab3', 'tab4', 'tab5', 'tab6', 'tab7', 'tab8', 'tab9']],
   ['clipboard', ['copyUrl', 'copyTitle', 'copyPath']],
   ['views', ['views', 'viewEditor', 'goPrimary', 'toggleNot', 'cycleOp']],
+  ['text input', ['complete', 'deleteBack']],
   ['misc', ['help', 'escape', 'quit']],
 ];
 export type Bindings = Record<Action, string[]>;
@@ -119,9 +123,10 @@ export type Bindings = Record<Action, string[]>;
  * Where keys are read: the main browser, a (read-only) view tab, the views dialog, and the view
  * editor's list and expression columns. Each action has one binding list, shared by every screen
  * it works in, so rebinding `j` moves it everywhere; keys only need to be unique per screen.
+ * `input` is every text box with suggestions (the pickers and the tags field); see `inputAction`.
  */
-export type Screen = 'main' | 'viewTab' | 'dialog' | 'editorList' | 'editorExpr';
-export const SCREENS: readonly Screen[] = ['main', 'viewTab', 'dialog', 'editorList', 'editorExpr'];
+export type Screen = 'main' | 'viewTab' | 'dialog' | 'editorList' | 'editorExpr' | 'input';
+export const SCREENS: readonly Screen[] = ['main', 'viewTab', 'dialog', 'editorList', 'editorExpr', 'input'];
 
 /** Actions a view tab refuses: views are read-only (yank still works, to paste in a normal tab). */
 export const MUTATING: ReadonlySet<Action> = new Set<Action>([
@@ -129,6 +134,7 @@ export const MUTATING: ReadonlySet<Action> = new Set<Action>([
 ]);
 
 const EDITOR_ONLY: Action[] = ['toggleNot', 'cycleOp'];
+const INPUT: Action[] = ['complete', 'deleteBack'];
 const LIST: Action[] = [
   'up', 'down', 'top', 'bottom', 'halfUp', 'halfDown', 'pageUp', 'pageDown',
   'toggleSelect', 'visual', 'visualUnset', 'selectAll', 'invertSelection',
@@ -138,13 +144,14 @@ const EDIT: Action[] = ['yank', 'cut', 'paste', 'cancelYank', 'delete', 'create'
 
 const SCREEN_ACTIONS: Record<Screen, ReadonlySet<Action>> = (() => {
   const all = Object.keys(ACTIONS) as Action[];
-  const main = all.filter((a) => a !== 'goPrimary' && !EDITOR_ONLY.includes(a));
+  const main = all.filter((a) => a !== 'goPrimary' && !EDITOR_ONLY.includes(a) && !INPUT.includes(a));
   return {
     main: new Set(main),
     viewTab: new Set([...main, 'goPrimary']),
     dialog: new Set([...LIST, 'open']),
     editorList: new Set([...LIST, ...EDIT, 'enter']),
     editorExpr: new Set([...LIST, ...EDIT, 'parent', ...EDITOR_ONLY]),
+    input: new Set(INPUT),
   };
 })();
 
@@ -234,6 +241,8 @@ export const DEFAULT_BINDINGS: Bindings = {
   help: ['?', '<F1>'],
   escape: ['<Esc>'],
   quit: ['q'],
+  complete: ['<Tab>'],
+  deleteBack: ['<C-w>'],
 };
 
 const NAMED: Record<string, string> = {
@@ -282,6 +291,16 @@ export function eventToKey(e: KeyEventLike): string | null {
   }
   if (key.length !== 1) return null;
   return mods ? `<${mods}${key}>` : key;
+}
+
+export type InputAction = 'complete' | 'deleteBack';
+
+/** The text-input action a key press triggers. Inputs take single keys only: longer sequences never match. */
+export function inputAction(bindings: Bindings, e: KeyEventLike): InputAction | null {
+  const key = eventToKey(e);
+  if (!key) return null;
+  for (const a of INPUT as InputAction[]) if (bindings[a].includes(key)) return a;
+  return null;
 }
 
 /** Split '<C-u>gg' into ['<C-u>', 'g', 'g']. */

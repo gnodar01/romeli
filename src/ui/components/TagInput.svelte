@@ -1,15 +1,19 @@
 <script lang="ts">
-  import { applyCompletion, complete, type CompletionState } from '../../core/complete';
+  import { applyCompletion, complete, deleteBackSegment, type CompletionState } from '../../core/complete';
+  import { inputAction, type Bindings } from '../../core/keymap';
   import type { Model } from '../../core/model';
   import Highlight from './Highlight.svelte';
 
   let {
     model,
+    bindings,
     value = $bindable(''),
     input = $bindable<HTMLInputElement | undefined>(),
     placeholder = 'media/blogs/tech/, programming languages/python/',
   }: {
     model: Model;
+    /** For the text-input actions (complete, deleteBack). */
+    bindings: Bindings;
     value?: string;
     input?: HTMLInputElement;
     placeholder?: string;
@@ -48,7 +52,8 @@
 
   function onkeydown(e: KeyboardEvent) {
     const ctrl = e.ctrlKey && !e.altKey && !e.metaKey;
-    if (e.key === 'Tab' && !e.shiftKey && open) {
+    const act = inputAction(bindings, e);
+    if (act === 'complete' && open) {
       e.preventDefault();
       accept();
     } else if (open && (e.key === 'ArrowDown' || (ctrl && e.key === 'n'))) {
@@ -61,14 +66,10 @@
       e.preventDefault();
       e.stopPropagation();
       dismissed = true;
-    } else if (ctrl && e.key === 'w') {
-      // delete back to the previous '/' or ','
+    } else if (act === 'deleteBack') {
       e.preventDefault();
       const pos = input?.selectionStart ?? value.length;
-      const trimmed = value
-        .slice(0, pos)
-        .replace(/[\s/,]+$/, '')
-        .replace(/[^/,]*$/, '');
+      const trimmed = deleteBackSegment(value.slice(0, pos));
       value = trimmed + value.slice(pos);
       queueMicrotask(() => {
         input?.setSelectionRange(trimmed.length, trimmed.length);

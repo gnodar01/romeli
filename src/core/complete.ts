@@ -108,3 +108,22 @@ export function parseTagInput(model: Model, input: string): TagPath[] {
 export function newTags(model: Model, tags: TagPath[]): TagPath[] {
   return tags.filter((t) => !model.resolve(t));
 }
+
+/** Delete back (C-w) in the tags field: to the previous '/' or ','. */
+export function deleteBackSegment(before: string): string {
+  return before.replace(/[\s/,]+$/, '').replace(/[^/,]*$/, '');
+}
+
+/**
+ * Delete back (C-w) in a query over tag paths: to the longest shorter prefix that is a tag
+ * (`isTag('linux/')`), else to nothing. Text after the last tag, like an item's title in jump (even
+ * one containing '/') or a half-typed name, goes in one step; then each tag drops its last segment.
+ */
+export function deleteBackTag(before: string, isTag: (path: string) => boolean): string {
+  const s = before.trimEnd();
+  for (let end = s.length - 1; end > 0; end--) {
+    const p = s.slice(0, end);
+    if (p.endsWith('/') && isTag(p)) return p;
+  }
+  return '';
+}

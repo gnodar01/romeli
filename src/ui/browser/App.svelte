@@ -22,6 +22,7 @@
   import { KeyResolver, MUTATING, bindingsFor, type Action, type Screen } from '../../core/keymap';
   import { Model, type TagNode } from '../../core/model';
   import { OpError, normalizeName, plural, type OpResult } from '../../core/store';
+  import { deleteBackTag } from '../../core/complete';
   import { formatPath, formatTagList, isAncestor, parsePath, pathKey, samePath } from '../../core/tags';
   import type { TagPath } from '../../core/types';
   import { UndoStack } from '../../core/undo';
@@ -497,8 +498,10 @@
       items: '↵ go to bookmark · S-↵ open in new browser tab',
       tags: '↵ go to tag · S-↵ open in new romeli tab',
     };
+    const tagLabels = new Set(cands.filter((c) => c.kind === 'tag').map((c) => c.label));
     overlays.picker({
       title: titles[scope],
+      deleteBack: scope === 'items' ? undefined : (before) => deleteBackTag(before, (p) => tagLabels.has(p)),
       placeholder: scope === 'items' ? 'title or url' : scope === 'tags' ? 'tag/path' : 'tag/path or bookmark',
       hint: hints[scope],
       search: (q) =>
@@ -725,7 +728,7 @@
           return u ? `redid: ${u.label}` : 'nothing to redo';
         });
       case 'help':
-        overlays.help(['main', 'viewTab']);
+        overlays.help(['main', 'viewTab', 'input']);
         return;
       case 'escape':
         if (nav.escape()) return;
@@ -831,6 +834,7 @@
         tags={o.tags}
         focus={o.focus}
         favicon={faviconFor(favicons, o.url)}
+        bindings={bindingsOf(settings)}
         onSave={(u, t, list) => saveForm(o.editing, u, t, list)}
         onCancel={() => (form = null)}
       />

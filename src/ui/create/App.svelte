@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { createStore, faviconFor, loadFavicons } from '../../adapter/browser';
+  import { bindingsOf, createStore, faviconFor, loadFavicons, loadSettings } from '../../adapter/browser';
+  import type { Bindings } from '../../core/keymap';
   import type { Model } from '../../core/model';
   import { formatTagList } from '../../core/tags';
   import type { TagPath } from '../../core/types';
@@ -11,13 +12,15 @@
   const store = createStore();
 
   let model = $state.raw<Model>();
+  let bindings = $state.raw<Bindings>();
   let favicon = $state<string>();
   let existing = $state(false);
   let title = $state(params.get('title') ?? '');
   let tags = $state('');
 
   onMount(async () => {
-    const m = await store.load();
+    const [m, s] = await Promise.all([store.load(), loadSettings()]);
+    bindings = bindingsOf(s);
     const item = url ? m.item(url) : undefined;
     if (item) {
       existing = true;
@@ -35,9 +38,10 @@
 </script>
 
 <main>
-  {#if model}
+  {#if model && bindings}
     <ItemForm
       {model}
+      {bindings}
       heading={existing ? 'edit bookmark' : 'new bookmark'}
       {url}
       {title}

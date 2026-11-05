@@ -1,5 +1,7 @@
 <script lang="ts" generics="T">
   import { onMount, untrack } from 'svelte';
+  import { deleteBackSegment } from '../../core/complete';
+  import { inputAction, type Bindings } from '../../core/keymap';
   import type { PickerRow } from '../browser/view';
   import Highlight from './Highlight.svelte';
   import WrapInput from './WrapInput.svelte';
@@ -10,6 +12,8 @@
     placeholder = '',
     hint = '',
     search,
+    bindings,
+    deleteBack = deleteBackSegment,
     onPick,
     onCancel,
   }: {
@@ -19,6 +23,10 @@
     placeholder?: string;
     hint?: string;
     search: (q: string) => PickerRow<T>[];
+    /** For the text-input actions (complete, deleteBack). */
+    bindings: Bindings;
+    /** The query before the caret → what deleteBack leaves of it. */
+    deleteBack?: (before: string) => string;
     /** `alt` is true for Shift+Enter. */
     onPick: (v: T, alt: boolean) => void;
     onCancel: () => void;
@@ -40,19 +48,43 @@
     list?.querySelector('.sel')?.scrollIntoView({ block: 'nearest' });
   });
 
+  /** Tab: fill the query with the highlighted row's label, keeping that row highlighted. */
+  function complete() {
+    const r = rows[sel];
+    if (!r) return;
+    q = r.label;
+    sel = Math.max(0, rows.findIndex((x) => x.key === r.key));
+    queueMicrotask(() => input?.setSelectionRange(q.length, q.length));
+  }
+
+  function deleteBackQuery() {
+    const pos = input?.selectionStart ?? q.length;
+    const kept = deleteBack(q.slice(0, pos));
+    q = kept + q.slice(pos);
+    sel = 0;
+    queueMicrotask(() => input?.setSelectionRange(kept.length, kept.length));
+  }
+
   function onkeydown(e: KeyboardEvent) {
     e.stopPropagation();
     const ctrl = e.ctrlKey && !e.altKey;
-    if (e.key === 'Enter') {
+    const act = inputAction(bindings, e);
+    if (act) {
+      e.preventDefault();
+      if (act === 'complete') complete();
+      else deleteBackQuery();
+    } else if (e.key === 'Enter') {
       e.preventDefault();
       if (rows[sel]) onPick(rows[sel].value, e.shiftKey);
     } else if (e.key === 'Escape') {
       e.preventDefault();
       onCancel();
-    } else if (e.key === 'ArrowDown' || (ctrl && (e.key === 'n' || e.key === 'j')) || (e.key === 'Tab' && !e.shiftKey)) {
+    } else if (e.key === 'Tab') {
+      e.preventDefault(); // keep focus in the query
+    } else if (e.key === 'ArrowDown' || (ctrl && (e.key === 'n' || e.key === 'j'))) {
       e.preventDefault();
       sel = Math.min(rows.length - 1, sel + 1);
-    } else if (e.key === 'ArrowUp' || (ctrl && (e.key === 'p' || e.key === 'k')) || (e.key === 'Tab' && e.shiftKey)) {
+    } else if (e.key === 'ArrowUp' || (ctrl && (e.key === 'p' || e.key === 'k'))) {
       e.preventDefault();
       sel = Math.max(0, sel - 1);
     } else if (ctrl && e.key === 'u') {

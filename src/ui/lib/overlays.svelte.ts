@@ -7,7 +7,7 @@ export type PickAction = { go: () => void; alt?: () => void };
 export type Overlay =
   | { kind: 'prompt'; title: string; value?: string; hint?: string; onInput?: (v: string) => void; onSubmit: (v: string) => void; onCancel: () => void }
   | { kind: 'confirm'; title: string; lines: ConfirmLine[]; onAnswer: (yes: boolean) => void }
-  | { kind: 'picker'; title: string; value?: string; placeholder?: string; hint?: string; search: (q: string) => PickerRow<PickAction>[]; onCancel?: () => void }
+  | { kind: 'picker'; title: string; value?: string; placeholder?: string; hint?: string; search: (q: string) => PickerRow<PickAction>[]; deleteBack?: (before: string) => string; onCancel?: () => void }
   | { kind: 'help'; screens: Screen[] };
 
 /**

@@ -3,6 +3,7 @@
   import { KeyResolver, bindingsFor, type Action, type Bindings } from '../../core/keymap';
   import type { Model } from '../../core/model';
   import { plural, type UndoEntry } from '../../core/store';
+  import { deleteBackTag } from '../../core/complete';
   import { formatPath, parsePath } from '../../core/tags';
   import type { UndoStack } from '../../core/undo';
   import {
@@ -241,9 +242,11 @@
     for (const t of model.allTags()) {
       cands.push({ key: 't' + t.id, label: formatPath(t.path), ref: { tag: t.key }, kind: 'tag', sub: plural(ev.index.subtree(t).count(), 'item') });
     }
+    const tagLabels = new Set(cands.filter((c) => c.kind === 'tag').map((c) => c.label));
     overlays.picker({
       title,
       value,
+      deleteBack: (before) => deleteBackTag(before, (p) => tagLabels.has(p)),
       placeholder: kind === 'views' ? 'tag/path or {var}' : 'tag/path',
       hint: '↵ choose',
       search: (q): PickerRow<PickAction>[] =>
@@ -388,7 +391,7 @@
       case 'tabNext':
         return switchKind('vars');
       case 'help':
-        return overlays.help(['editorList', 'editorExpr']);
+        return overlays.help(['editorList', 'editorExpr', 'input']);
       case 'escape':
         if (nav.escape()) return;
         if (clip) clip = null;

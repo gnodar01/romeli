@@ -1,7 +1,7 @@
 import { BASE, checker, launch } from './lib.mjs';
 const out = process.argv[2] ?? '.';
 const browser = await launch();
-const { done } = checker();
+const { check, done } = checker();
 const page = await browser.newPage();
 const errors = [];
 page.on('pageerror', (e) => errors.push(String(e)));
@@ -25,6 +25,11 @@ await press('Tab');          console.log('tab →', await val());
 await type('cl');            console.log('cl →', (await comps()).slice(0, 2));
 await press('Tab');          console.log('tab →', await val());
 await page.screenshot({ path: `${out}/10-create.png` });
+// C-w deletes back one level, then Tab completes again
+const before = await val();
+await type('tmp/x');
+await page.keyboard.down('Control'); await press('w'); await press('w'); await page.keyboard.up('Control');
+check((await val()) === before, `C-w deletes back one level per press: ${JSON.stringify([before, await val()])}`);
 await press('Enter');
 console.log('Enter cycles to:', await page.evaluate(() => document.activeElement?.closest('label')?.textContent?.trim().slice(0, 4)));
 await page.keyboard.down('Meta'); await press('Enter'); await page.keyboard.up('Meta');

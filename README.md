@@ -57,7 +57,7 @@ doesn't let extensions change their own shortcuts: use `chrome://extensions/shor
 
 **Bookmark form** (create/edit): `Enter` / `Shift+Enter` cycle name → url → tags, `⌘Enter` (macOS) or
 `Ctrl+Enter` saves, `Esc` cancels. In the tags field `Tab` accepts a completion, `↑/↓` or `C-n/C-p` cycle,
-`,` starts the next tag, `C-w` deletes back one level. Unknown tags are offered as `+ create … [new]`.
+`,` starts the next tag, `C-w` deletes back one level (`Tab` and `C-w` are remappable: *complete*, *deleteBack*). Unknown tags are offered as `+ create … [new]`.
 
 ### Browser keys (all remappable in settings)
 
@@ -82,6 +82,7 @@ doesn't let extensions change their own shortcuts: use `chrome://extensions/shor
 | `f` | filter column (fuzzy) |
 | `z` | fuzzy jump to any tag or item |
 | `s` / `S` | search bookmarks (title/url) / tags — `Shift+Enter` opens in a new browser tab / romeli tab |
+| (in `z` `s` `S`) | `↑/↓` or `C-n/C-p` move, `Tab` completes the query to the highlighted row, `C-w` deletes back (in `z`, an item's title first, then one tag at a time), `C-u` clears |
 | `,a` `,c` `,m` `,n` (+ shift = reverse) `,t` | sort alpha / added / modified / native (browser) order, tags-first toggle |
 | `R` | recursive view (include items from subtags) |
 | `t` `1`–`9` `[` `]` `C-c` | tabs |
