@@ -31,6 +31,16 @@
               "strict_min_version": "140.0"
             }
           }
+        },
+        {
+          "version": "0.4.1",
+          "update_link": "https://github.com/gnodar01/romeli/releases/download/v0.4.1/romeli-0.4.1.xpi",
+          "update_hash": "sha256:2f3ef4c69cce198e17988f9671b7d3f76febe3c1e9e17b099921a464e65ef066",
+          "browser_specific_settings": {
+            "gecko": {
+              "strict_min_version": "140.0"
+            }
+          }
         }
       ]
     }
