@@ -5,6 +5,23 @@ versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.4.1]
+
+### Added
+
+- `C-w` in the search boxes (`z`, `s`, `S`, and the view editor's *Add to …*) deletes back like it does in the bookmark
+  form's tags field. In `z` it strips the item's title first (even one containing `/`), then one tag at a time; in `S`
+  and the view editor a half-typed name goes first, then one tag at a time. In `s` it deletes back to the previous `/`.
+- Completing (`Tab`) and deleting back (`C-w`) are remappable in Settings → *browser keys*, as *complete* and
+  *deleteBack* under a new "text input" section. Each has one binding shared by every search box and the tags field,
+  and both are listed in the `?` key reference.
+
+### Changed
+
+- `Tab` in the search boxes completes the query to the highlighted row, which stays highlighted, the way it completes
+  a tag in the bookmark form. It no longer moves to the next row; use `↓` or `C-n` (`↑` or `C-p` to go back).
+  `Shift+Tab` no longer does anything there.
+
 ## [0.4.0] - 2026-11-01
 
 ### Added
